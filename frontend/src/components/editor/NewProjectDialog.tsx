@@ -309,8 +309,15 @@ export function buildStarterSections(defs: ProBoardDef[]): StarterSection[] {
 }
 
 const ProPill: React.FC = () => (
-  <span className="new-project-pro" title="Pro board — you can place and wire it; running it depends on your plan">
-    PRO
+  <span
+    className="new-project-pro"
+    title="Bo mạch cộng đồng — 100% Miễn phí cho mọi người dùng"
+    style={{
+      color: '#ffffff',
+      background: 'linear-gradient(180deg, #10b981, #059669)',
+    }}
+  >
+    FREE
   </span>
 );
 

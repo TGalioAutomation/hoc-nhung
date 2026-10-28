@@ -13,12 +13,19 @@ import {
   Key,
   Download,
   AlertCircle,
+  Sparkles,
+  Heart,
+  GitFork,
+  Cpu,
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuthStore, type User } from '../../store/useAuthStore';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSimulatorStore } from '../../store/useSimulatorStore';
 import { useProjectStore } from '../../store/useProjectStore';
+import { useCommunityHubStore } from '../../store/useCommunityHubStore';
+import { forkAndRemixProject } from '../../utils/communityFork';
+import type { CommunityProject, AgeGroupFilter } from '../../types/community';
 import {
   getMyProjects,
   createProject,
@@ -42,7 +49,7 @@ export const AccountManagerModal: React.FC = () => {
     loading: authLoading,
   } = useAuthStore();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'admin' | 'projects'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'admin' | 'projects' | 'community'>('profile');
 
   // Auth form states
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -83,6 +90,28 @@ export const AccountManagerModal: React.FC = () => {
   const [newProjectPublic, setNewProjectPublic] = useState(true);
   const [savingProject, setSavingProject] = useState(false);
   const [projectMsg, setProjectMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Community state
+  const {
+    projects: communityProjects,
+    likeProject: likeCommunityProject,
+    ageGroup: communityAgeGroup,
+    setAgeGroup: setCommunityAgeGroup,
+    search: communitySearch,
+    setSearch: setCommunitySearch,
+    fetchProjects: fetchCommunityProjects,
+  } = useCommunityHubStore();
+  const [remixingCommunityId, setRemixingCommunityId] = useState<string | null>(null);
+
+  const handleCommunityRemix = async (project: CommunityProject) => {
+    setRemixingCommunityId(project.id);
+    try {
+      handleClose();
+      await forkAndRemixProject(project);
+    } finally {
+      setRemixingCommunityId(null);
+    }
+  };
 
   const isOpen = isAccountModalOpen || isAuthModalOpen;
 
@@ -421,11 +450,11 @@ export const AccountManagerModal: React.FC = () => {
                 width: 32,
                 height: 32,
                 borderRadius: 8,
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#000',
+                color: '#fff',
               }}
             >
               <Crown size={20} strokeWidth={2.5} />
@@ -437,17 +466,17 @@ export const AccountManagerModal: React.FC = () => {
                   style={{
                     fontSize: 10,
                     fontWeight: 800,
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
-                    color: '#000',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: '#fff',
                     padding: '2px 6px',
                     borderRadius: 4,
                   }}
                 >
-                  FULL PRO
+                  🌱 100% MIỄN PHÍ CHO CỘNG ĐỒNG (OPEN COMMUNITY)
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#a1a1aa' }}>
-                Hệ thống nhúng thực hành & mở khóa 100% tính năng Pro vĩnh viễn
+                Học lập trình nhúng & vi điều khiển 100% miễn phí cho cộng đồng trẻ em & học sinh Việt Nam
               </div>
             </div>
           </div>
@@ -541,6 +570,30 @@ export const AccountManagerModal: React.FC = () => {
           >
             <Cloud size={16} />
             <span>☁️ Dự Án Đám Mây</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('community');
+              fetchCommunityProjects();
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 16px',
+              fontSize: 13,
+              fontWeight: 600,
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'community' ? '2px solid #10b981' : '2px solid transparent',
+              color: activeTab === 'community' ? '#34d399' : '#a1a1aa',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Sparkles size={16} />
+            <span>🌟 Kho Dự Án Cộng Đồng</span>
           </button>
         </div>
 
@@ -849,7 +902,7 @@ export const AccountManagerModal: React.FC = () => {
                         }}
                       >
                         {authLoading ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />}
-                        <span>Đăng Ký & Tự Động Kích Hoạt Full Pro</span>
+                        <span>Đăng Ký Tài Khoản Học Tập (100% Miễn Phí)</span>
                       </button>
                     </form>
                   )}
@@ -860,8 +913,8 @@ export const AccountManagerModal: React.FC = () => {
                   {/* Pro Status Banner */}
                   <div
                     style={{
-                      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.25) 100%)',
-                      border: '1px solid rgba(245, 158, 11, 0.5)',
+                      background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.25) 100%)',
+                      border: '1px solid rgba(16, 185, 129, 0.5)',
                       borderRadius: 12,
                       padding: 18,
                       marginBottom: 20,
@@ -874,8 +927,8 @@ export const AccountManagerModal: React.FC = () => {
                             width: 36,
                             height: 36,
                             borderRadius: 10,
-                            background: '#f59e0b',
-                            color: '#000',
+                            background: '#10b981',
+                            color: '#fff',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -884,11 +937,11 @@ export const AccountManagerModal: React.FC = () => {
                           <Crown size={22} strokeWidth={3} />
                         </div>
                         <div>
-                          <div style={{ fontWeight: 800, fontSize: 16, color: '#fbbf24' }}>
-                            👑 GÓI BẢN QUYỀN: VELXIO FULL PRO (VĨNH VIỄN)
+                          <div style={{ fontWeight: 800, fontSize: 16, color: '#34d399' }}>
+                            🌱 100% MIỄN PHÍ CHO CỘNG ĐỒNG (OPEN COMMUNITY)
                           </div>
                           <div style={{ fontSize: 12, color: '#d4d4d8' }}>
-                            Thời hạn: Vô thời hạn (2099-12-31) · Đã mở khóa 100% tài nguyên
+                            Vĩnh viễn cho học sinh & cộng đồng · Mở khóa 100% toàn bộ tính năng cao cấp
                           </div>
                         </div>
                       </div>
@@ -1106,7 +1159,7 @@ export const AccountManagerModal: React.FC = () => {
                     Quản Trị Tài Khoản & Phân Quyền Hệ Thống
                   </div>
                   <div style={{ fontSize: 12, color: '#a1a1aa' }}>
-                    Tất cả các tài khoản tạo ra đều tự động mở khóa Full Pro vĩnh viễn
+                    Tất cả tài khoản học tập đều mở khóa 100% tài nguyên cộng đồng miễn phí
                   </div>
                 </div>
 
@@ -1314,7 +1367,7 @@ export const AccountManagerModal: React.FC = () => {
                           cursor: 'pointer',
                         }}
                       >
-                        {creatingUser ? 'Đang tạo...' : 'Tạo Tài Khoản (Full Pro)'}
+                        {creatingUser ? 'Đang tạo...' : 'Tạo Tài Khoản Học Tập'}
                       </button>
                       <button
                         type="button"
@@ -1439,15 +1492,15 @@ export const AccountManagerModal: React.FC = () => {
                         <td style={{ padding: '10px 10px' }}>
                           <span
                             style={{
-                              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                              color: '#000',
+                              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                              color: '#fff',
                               fontWeight: 800,
                               fontSize: 10,
                               padding: '2px 6px',
                               borderRadius: 4,
                             }}
                           >
-                            👑 FULL PRO
+                            🌱 CỘNG ĐỒNG
                           </span>
                         </td>
                         <td style={{ padding: '10px 10px' }}>
@@ -1733,6 +1786,228 @@ export const AccountManagerModal: React.FC = () => {
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════ TAB 4: COMMUNITY PROJECTS ════════════════════════ */}
+          {activeTab === 'community' && (
+            <div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 16,
+                  flexWrap: 'wrap',
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <h3
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 800,
+                      color: '#34d399',
+                      margin: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <Sparkles size={18} />
+                    <span>Kho Dự Án Sáng Tạo Cộng Đồng</span>
+                  </h3>
+                  <div style={{ fontSize: 12, color: '#a1a1aa', marginTop: 2 }}>
+                    Khám phá mạch sáng chế của thiếu nhi Việt Nam · 1-Click Remix nạp thẳng vào bàn thí nghiệm
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    placeholder="Tìm theo tên, linh kiện..."
+                    value={communitySearch}
+                    onChange={(e) => setCommunitySearch(e.target.value)}
+                    style={{
+                      background: '#27272a',
+                      border: '1px solid #3f3f46',
+                      borderRadius: 8,
+                      padding: '6px 12px',
+                      color: '#f4f4f5',
+                      fontSize: 12,
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    onClick={() => fetchCommunityProjects()}
+                    style={{
+                      background: '#27272a',
+                      border: '1px solid #3f3f46',
+                      color: '#d4d4d8',
+                      padding: '6px 12px',
+                      borderRadius: 8,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <RefreshCw size={13} />
+                    <span>Làm mới</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Age Bracket Filter */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                {[
+                  { key: 'all', label: 'Tất cả lứa tuổi', icon: '🌟' },
+                  { key: '5-8', label: '5–8 tuổi', icon: '🌱' },
+                  { key: '9-13', label: '9–13 tuổi', icon: '🧩' },
+                  { key: '14-20', label: '14–20 tuổi', icon: '🚀' },
+                ].map((btn) => {
+                  const active = communityAgeGroup === btn.key;
+                  return (
+                    <button
+                      key={btn.key}
+                      onClick={() => setCommunityAgeGroup(btn.key as AgeGroupFilter)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        background: active ? '#10b981' : '#27272a',
+                        color: active ? '#fff' : '#d4d4d8',
+                        border: active ? '1px solid #059669' : '1px solid #3f3f46',
+                        borderRadius: 16,
+                        padding: '4px 12px',
+                        fontSize: 11,
+                        fontWeight: active ? 700 : 500,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span>{btn.icon}</span>
+                      <span>{btn.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Community Projects Grid */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                  gap: 14,
+                }}
+              >
+                {communityProjects.map((p) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      background: '#27272a',
+                      border: '1px solid #3f3f46',
+                      borderRadius: 12,
+                      padding: 14,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: 6,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            background: '#18181b',
+                            color: '#38bdf8',
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                          }}
+                        >
+                          {p.boardType}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            color: '#a1a1aa',
+                          }}
+                        >
+                          {p.author.displayName}
+                        </span>
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#f4f4f5' }}>{p.name}</div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: '#a1a1aa',
+                          marginTop: 4,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {p.description}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                      <button
+                        onClick={() => likeCommunityProject(p.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          background: p.hasLiked ? 'rgba(239, 68, 68, 0.2)' : '#18181b',
+                          border: p.hasLiked ? '1px solid #ef4444' : '1px solid #3f3f46',
+                          color: p.hasLiked ? '#f87171' : '#a1a1aa',
+                          padding: '6px 8px',
+                          borderRadius: 6,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Heart size={12} fill={p.hasLiked ? '#f87171' : 'none'} />
+                        <span>{p.likesCount}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleCommunityRemix(p)}
+                        disabled={remixingCommunityId === p.id}
+                        style={{
+                          flex: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          border: 'none',
+                          color: '#fff',
+                          borderRadius: 6,
+                          padding: '6px 12px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <GitFork size={13} />
+                        <span>🚀 Remix Mạch</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

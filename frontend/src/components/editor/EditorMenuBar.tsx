@@ -29,6 +29,7 @@ import type { ThemeMode } from '../../lib/theme';
 import { LOCALES, LOCALE_META, type Locale } from '../../i18n/config';
 import { getLocaleFromPath, switchLocale } from '../../i18n/path';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useCommunityHubStore } from '../../store/useCommunityHubStore';
 import {
   hasEditorCommand,
   runEditorCommand,
@@ -53,6 +54,7 @@ type Item =
        *  "My projects" would read as a broken feature in both. */
       optional?: boolean;
     }
+  | { kind: 'action'; label: string; onSelect: () => void; pro?: boolean }
   | { kind: 'link'; href: string; label: string }
   | { kind: 'separator' };
 
@@ -123,6 +125,13 @@ export const EditorMenuBar: React.FC = () => {
       id: 'account.myProjects',
       label: t('header.auth.myProjects', 'My projects'),
       optional: true,
+    },
+    {
+      kind: 'action',
+      label: '🌟 Kho Dự Án & Bảng Vàng Cộng Đồng...',
+      onSelect: () => {
+        useCommunityHubStore.getState().openModal('projects');
+      },
     },
     { kind: 'command', id: 'project.open', label: t('editor.menu.open', 'Open project…') },
     {
@@ -254,6 +263,23 @@ export const EditorMenuBar: React.FC = () => {
     </a>
   );
 
+  const renderAction = (item: Extract<Item, { kind: 'action' }>): React.ReactNode => (
+    <button
+      key={item.label}
+      role="menuitem"
+      className="emb-item"
+      onClick={() => {
+        setOpen(null);
+        item.onSelect();
+      }}
+    >
+      <span>
+        {item.label}
+        {item.pro && <span className="emb-pro">FREE</span>}
+      </span>
+    </button>
+  );
+
   const renderCommand = (item: Extract<Item, { kind: 'command' }>): React.ReactNode => (
     <button
       key={item.id}
@@ -267,7 +293,7 @@ export const EditorMenuBar: React.FC = () => {
     >
       <span>
         {item.label}
-        {item.pro && <span className="emb-pro">PRO</span>}
+        {item.pro && <span className="emb-pro">FREE</span>}
       </span>
       {item.shortcut && <span className="emb-shortcut">{item.shortcut}</span>}
     </button>
@@ -396,7 +422,7 @@ export const EditorMenuBar: React.FC = () => {
                     useAuthStore.getState().openAccountModal('profile');
                   }}
                 >
-                  <span>👑 Quản Lý Tài Khoản (Full Pro)</span>
+                  <span>🌱 Quản Lý Tài Khoản (100% MIỄN PHÍ CHO CỘNG ĐỒNG)</span>
                 </button>
                 <button
                   role="menuitem"
@@ -417,6 +443,16 @@ export const EditorMenuBar: React.FC = () => {
                   }}
                 >
                   <span>☁️ Dự Án Đã Lưu (Cloud)</span>
+                </button>
+                <button
+                  role="menuitem"
+                  className="emb-item"
+                  onClick={() => {
+                    setOpen(null);
+                    useCommunityHubStore.getState().openModal('projects');
+                  }}
+                >
+                  <span>🌟 Kho Dự Án Cộng Đồng & Bảng Vàng</span>
                 </button>
                 {useAuthStore.getState().user && (
                   <button
@@ -497,6 +533,8 @@ export const EditorMenuBar: React.FC = () => {
                 <div key={`sep-${i}`} className="emb-separator" />
               ) : item.kind === 'link' ? (
                 renderLink(item)
+              ) : item.kind === 'action' ? (
+                renderAction(item)
               ) : (
                 renderCommand(item)
               ),

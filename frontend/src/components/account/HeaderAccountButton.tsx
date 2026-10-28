@@ -18,8 +18,8 @@ export const HeaderAccountButton: React.FC<HeaderAccountButtonProps> = ({ compac
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
-            background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(245, 158, 11, 0.3) 100%)',
-            border: '1px solid rgba(217, 119, 6, 0.6)',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.25) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.6)',
             color: 'var(--color-text-primary, #2c2219)',
             padding: compact ? '3px 8px' : '4px 12px',
             borderRadius: 6,
@@ -32,7 +32,7 @@ export const HeaderAccountButton: React.FC<HeaderAccountButtonProps> = ({ compac
           title="Tài khoản & Dự án Cộng đồng (100% Miễn phí cho Cộng đồng)"
         >
           <Crown size={14} style={{ color: '#10b981' }} />
-          <span>{compact ? 'FREE' : '🌱 Cộng Đồng · Tài Khoản'}</span>
+          <span>{compact ? '🌱 MIỄN PHÍ' : '🌱 100% MIỄN PHÍ CHO CỘNG ĐỒNG (OPEN COMMUNITY)'}</span>
         </button>
       </div>
     );
@@ -55,7 +55,7 @@ export const HeaderAccountButton: React.FC<HeaderAccountButtonProps> = ({ compac
           alignItems: 'center',
           gap: 7,
           background: 'var(--color-surface-1, rgba(255, 255, 255, 0.06))',
-          border: '1px solid rgba(217, 119, 6, 0.55)',
+          border: '1px solid rgba(16, 185, 129, 0.55)',
           borderRadius: 6,
           padding: compact ? '2px 6px' : '3px 10px',
           color: 'var(--color-text-primary, #2c2219)',
@@ -109,7 +109,7 @@ export const HeaderAccountButton: React.FC<HeaderAccountButtonProps> = ({ compac
             letterSpacing: '0.02em',
           }}
         >
-          🌱 100% FREE
+          {compact ? '🌱 FREE' : '🌱 100% MIỄN PHÍ CHO CỘNG ĐỒNG (OPEN COMMUNITY)'}
         </span>
 
         {user.is_admin && !compact && (

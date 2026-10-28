@@ -16,6 +16,8 @@ import { useProRoutes, useProRoutesSettled } from './lib/proRoutes';
 import { triggerSessionCheck } from './lib/proSession';
 import { MessageDialogHost } from './components/ui/MessageDialogHost';
 import { AccountManagerModal } from './components/account/AccountManagerModal';
+import { CommunityHubModal } from './components/community/CommunityHubModal';
+import { CommunityHubPage } from './pages/CommunityHubPage';
 import './lib/proUnlockInit';
 import './App.css';
 
@@ -51,6 +53,7 @@ const ROUTES: { path: string; element: ReactElement; index?: boolean }[] = [
   { path: '/', element: ROOT_ELEMENT, index: true },
   { path: 'editor', element: <EditorPage /> },
   { path: 'examples', element: <ExamplesPage /> },
+  { path: 'community', element: <CommunityHubPage /> },
   // /examples/<id> = SEO landing (preview, badges, "Open in Simulator" CTA).
   // /example/<id>  = live editor with the example pre-loaded; the URL
   //                  stays pinned so links are shareable + bookmarkable.
@@ -146,6 +149,8 @@ function App() {
       <MessageDialogHost />
       {/* Account & Universal Pro Management Hub */}
       <AccountManagerModal />
+      {/* Community Hub & Open Leaderboard Modal */}
+      <CommunityHubModal />
     </Router>
   );
 }

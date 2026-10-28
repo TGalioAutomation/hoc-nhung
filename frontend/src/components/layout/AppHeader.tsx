@@ -181,6 +181,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ editorMenu, editorToolbar 
             <Link to={localize('/examples')} className={'header-nav-link' + isActive('/examples')}>
               {t('header.nav.examples')}
             </Link>
+            <Link to={localize('/community')} className={'header-nav-link' + isActive('/community')}>
+              🌟 {t('header.nav.community', 'Kho Dự Án Cộng Đồng')}
+            </Link>
             <Link to={localize('/editor/')} className={'header-nav-link' + isActive('/editor')}>
               {t('header.nav.editor')}
             </Link>

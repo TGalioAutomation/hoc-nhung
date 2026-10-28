@@ -979,10 +979,10 @@ const PI_BOARD_ART: Record<string, string> = {
   'velxio-raspberry-pi-5': raspberryPi5Png,
 };
 
-/** Gold PRO pill shown on cards for paid-gated boards (Pi Linux + STM32). */
+/** Green FREE pill shown on cards for community boards (Pi Linux + STM32). */
 const ProBadge: React.FC = () => (
   <span
-    title="Pro board — you can place and wire it; running it depends on your plan"
+    title="Bo mạch cộng đồng — 100% Miễn phí cho mọi người dùng"
     style={{
       position: 'absolute',
       top: 8,
@@ -993,15 +993,12 @@ const ProBadge: React.FC = () => (
       fontSize: 11,
       fontWeight: 700,
       letterSpacing: 0.6,
-      // Ink and fill both fixed: a gold PRO pill is gold on either theme,
-      // and --color-feedback-warning is a red-orange in light mode, which
-      // this gradient is not meant to be.
-      color: '#1a1205',
-      background: 'linear-gradient(180deg,#ffd566,#f5a623)',
+      color: '#ffffff',
+      background: 'linear-gradient(180deg, #10b981, #059669)',
       boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
     }}
   >
-    PRO
+    FREE
   </span>
 );
 

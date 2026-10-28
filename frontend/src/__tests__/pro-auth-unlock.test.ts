@@ -81,4 +81,89 @@ describe('100% Universal Pro Unlock & Auth Store Verification', () => {
     store.closeAuthModal();
     expect(useAuthStore.getState().isAuthModalOpen).toBe(false);
   });
+
+  it('verifies that all 19+ microcontroller variants (STM32, Pi, ESP32, Arduino, RP2040) are 100% unlocked for community use', () => {
+    const allMcuKinds = [
+      // STM32 family (QEMU arm)
+      'stm32-bluepill',
+      'stm32-blackpill',
+      'stm32-nucleo-c031c6',
+      'stm32-nucleo-f103rb',
+      'stm32-nucleo-f401re',
+      'stm32-nucleo-f411re',
+      'stm32-nucleo-l031k6',
+      'stm32-nucleo-g031k8',
+      'stm32-nucleo-g474re',
+      // Raspberry Pi family (QEMU Linux)
+      'pi-zero',
+      'pi-1',
+      'pi-2',
+      'pi-3b',
+      'pi-4b',
+      'pi-5',
+      // ESP32 family
+      'esp32',
+      'esp32-s2',
+      'esp32-s3',
+      'esp32-c3',
+      'esp32-c6',
+      'esp32-cam',
+      // RP2040 & Arduino
+      'raspberry-pi-pico',
+      'arduino-uno',
+      'arduino-nano',
+      'arduino-mega',
+    ];
+
+    expect(allMcuKinds.length).toBeGreaterThanOrEqual(19);
+
+    for (const kind of allMcuKinds) {
+      const runVerdict = boardGateVerdict(kind as any, 'run');
+      expect(runVerdict).toEqual({ decision: 'allow' });
+
+      const addVerdict = boardGateVerdict(kind as any, 'add');
+      expect(addVerdict).toEqual({ decision: 'allow' });
+    }
+  });
+
+  it('verifies student and admin entities preserve complete unlocked entitlements for open community access', () => {
+    const studentUser: User = {
+      id: 'student-01',
+      username: 'em_hoc_sinh',
+      email: 'hocsinh@velxio.local',
+      role: 'student',
+      is_admin: false,
+      is_active: true,
+      is_pro: true,
+      is_paid_subscriber: true,
+      plan: 'pro',
+      plan_id: 'pro',
+      tier: 'pro',
+    };
+
+    const adminUser: User = {
+      id: 'admin-01',
+      username: 'admin',
+      email: 'admin@velxio.local',
+      role: 'admin',
+      is_admin: true,
+      is_active: true,
+      is_pro: true,
+      is_paid_subscriber: true,
+      plan: 'pro',
+      plan_id: 'pro',
+      tier: 'pro',
+    };
+
+    const ensuredStudent = ensureProUser(studentUser);
+    expect(ensuredStudent.is_pro).toBe(true);
+    expect(ensuredStudent.plan).toBe('pro');
+    expect(ensuredStudent.subscription_status).toBe('active');
+
+    const ensuredAdmin = ensureProUser(adminUser);
+    expect(ensuredAdmin.is_pro).toBe(true);
+    expect(ensuredAdmin.is_admin).toBe(true);
+    expect(ensuredAdmin.plan).toBe('pro');
+    expect(ensuredAdmin.subscription_status).toBe('active');
+  });
 });

@@ -34,7 +34,7 @@ export interface AuthState {
   isAuthModalOpen: boolean;
   authModalTab: 'login' | 'register';
   isAccountModalOpen: boolean;
-  accountModalTab: 'profile' | 'admin' | 'projects';
+  accountModalTab: 'profile' | 'admin' | 'projects' | 'community';
 
   // Actions
   login: (ident: string, password: string) => Promise<User>;
@@ -44,7 +44,7 @@ export interface AuthState {
   updateProfile: (data: { displayName?: string; username?: string; email?: string; password?: string }) => Promise<User>;
   openAuthModal: (tab?: 'login' | 'register') => void;
   closeAuthModal: () => void;
-  openAccountModal: (tab?: 'profile' | 'admin' | 'projects') => void;
+  openAccountModal: (tab?: 'profile' | 'admin' | 'projects' | 'community') => void;
   closeAccountModal: () => void;
   openAdminModal: () => void;
   setUser: (user: User | null, token?: string | null) => void;

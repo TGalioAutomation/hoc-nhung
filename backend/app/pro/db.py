@@ -95,6 +95,11 @@ def init_db() -> None:
                 is_public INTEGER DEFAULT 1,
                 visibility TEXT DEFAULT 'public',
                 board_type TEXT DEFAULT 'arduino-uno',
+                age_group TEXT DEFAULT 'all',
+                likes_count INTEGER DEFAULT 0,
+                forks_count INTEGER DEFAULT 0,
+                tags_json TEXT DEFAULT '[]',
+                forked_from_id TEXT,
                 components_json TEXT DEFAULT '[]',
                 wires_json TEXT DEFAULT '[]',
                 boards_json TEXT DEFAULT '[]',
@@ -108,6 +113,44 @@ def init_db() -> None:
             )
             """
         )
+
+        # Safe migration for existing databases: add missing columns if they do not exist
+        cursor = conn.execute("PRAGMA table_info(projects)")
+        existing_cols = {row["name"] for row in cursor.fetchall()}
+
+        column_migrations = [
+            ("age_group", "ALTER TABLE projects ADD COLUMN age_group TEXT DEFAULT 'all'"),
+            ("likes_count", "ALTER TABLE projects ADD COLUMN likes_count INTEGER DEFAULT 0"),
+            ("forks_count", "ALTER TABLE projects ADD COLUMN forks_count INTEGER DEFAULT 0"),
+            ("tags_json", "ALTER TABLE projects ADD COLUMN tags_json TEXT DEFAULT '[]'"),
+            ("forked_from_id", "ALTER TABLE projects ADD COLUMN forked_from_id TEXT"),
+        ]
+        for col_name, alter_stmt in column_migrations:
+            if col_name not in existing_cols:
+                try:
+                    conn.execute(alter_stmt)
+                    logger.info("Migrated projects table: added column %s", col_name)
+                except Exception as exc:
+                    logger.warning("Could not add column %s: %r", col_name, exc)
+
+        # Create project_likes table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS project_likes (
+                project_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                created_at TEXT,
+                PRIMARY KEY(project_id, user_id),
+                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+            )
+            """
+        )
+
+        # Indexes for fast querying & leaderboard sorting
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_projects_public ON projects(is_public, visibility);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_projects_age_group ON projects(age_group);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_projects_likes_count ON projects(likes_count DESC);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_project_likes_user ON project_likes(user_id);")
 
         # Seed default Admin account
         now = datetime.datetime.now(datetime.timezone.utc).isoformat()

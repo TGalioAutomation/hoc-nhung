@@ -135,7 +135,7 @@ export const ProjectByIdPage: React.FC = () => {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-interface RawProject {
+export interface RawProject {
   board_type: string;
   files: { name: string; content: string }[];
   file_groups?: { groupId: string; files: { name: string; content: string }[] }[];
