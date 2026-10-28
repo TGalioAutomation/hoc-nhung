@@ -1,0 +1,132 @@
+name: Production VPS CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: production-vps-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    name: Build & Test Quality Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Pin npm major
+        run: npm install -g npm@11
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund --include=optional
+          else
+            npm install --no-audit --no-fund --include=optional
+          fi
+
+      - name: TypeScript type check
+        run: cd frontend && npx tsc -p tsconfig.app.json --noEmit
+
+      - name: Run Vitest test suites
+        run: |
+          cd frontend
+          npx vitest run \
+            src/__tests__/first-visit-ux.test.ts \
+            src/__tests__/vietnamese-seo-pwa.test.ts \
+            src/__tests__/pro-auth-unlock.test.ts \
+            src/__tests__/community-hub.test.ts \
+            src/__tests__/classroom-curriculum.test.ts \
+            src/__tests__/classroom-stores.test.ts
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - name: Vite production build
+        run: cd frontend && npx vite build
+
+      - name: Upload compiled frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+
+  deploy-vps:
+    name: Deploy to Production VPS
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download compiled frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+      - name: Inspect deployment secrets
+        id: secrets-gate
+        run: |
+          if [ -n "${{ secrets.TAILSCALE_AUTHKEY }}" ] && [ -n "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Tailscale and VPS SSH credentials present. Initiating automated deployment."
+          else
+            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::TAILSCALE_AUTHKEY or VPS_SSH_KEY secret missing. Deployment skipped with guidance."
+          fi
+
+      - name: Guidance Notice (when secrets omitted)
+        if: steps.secrets-gate.outputs.has_secrets == 'false'
+        run: |
+          echo "================================================================================"
+          echo "ℹ️  NOTICE: AUTOMATED VPS DEPLOYMENT PAUSED (SECRETS NOT CONFIGURED)"
+          echo "================================================================================"
+          echo "Build & Test Quality Gate completed successfully with 100% PASS."
+          echo ""
+          echo "To enable zero-touch continuous deployment to the production VPS (100.94.160.6),"
+          echo "please configure the following repository secrets in GitHub Actions Settings:"
+          echo "  - TAILSCALE_AUTHKEY : Ephemeral or reusable auth key for Tailscale mesh VPN"
+          echo "  - VPS_SSH_KEY       : Private SSH key corresponding to root@100.94.160.6"
+          echo ""
+          echo "Manual production deployment can be executed at any time from local terminal:"
+          echo "  ./scripts/deploy-vps.sh"
+          echo "================================================================================"
+          exit 0
+
+      - name: Connect to Tailscale Mesh VPN
+        if: steps.secrets-gate.outputs.has_secrets == 'true'
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      - name: Configure SSH credentials
+        if: steps.secrets-gate.outputs.has_secrets == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 100.94.160.6 >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Execute Production Deployment
+        if: steps.secrets-gate.outputs.has_secrets == 'true'
+        env:
+          VPS_HOST: "100.94.160.6"
+          VPS_USER: "root"
+          VPS_SSH_KEY: "${HOME}/.ssh/id_ed25519"
+          VPS_APP_DIR: "/opt/apps/hoc-nhung"
+          HEALTH_URL: "https://hocnhung.apexdev.website/health"
+        run: |
+          chmod +x scripts/deploy-vps.sh scripts/backup-sqlite.sh
+          ./scripts/deploy-vps.sh --skip-tests

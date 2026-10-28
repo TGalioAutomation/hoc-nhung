@@ -26,7 +26,7 @@ function qs(selector: string): HTMLMetaElement | null {
  */
 function withTrailingSlash(u: string): string {
   try {
-    const parsed = new URL(u, 'https://velxio.dev');
+    const parsed = new URL(u, 'https://hocnhung.apexdev.website');
     if (!parsed.pathname.endsWith('/')) parsed.pathname += '/';
     return parsed.toString();
   } catch {
@@ -34,7 +34,7 @@ function withTrailingSlash(u: string): string {
   }
 }
 
-const DOMAIN = 'https://velxio.dev';
+const DOMAIN = 'https://hocnhung.apexdev.website';
 const HREFLANG_ATTR = 'data-seo-hreflang';
 
 /**

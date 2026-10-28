@@ -11,8 +11,5 @@ Disallow: /api/
 # noindex meta tag, and a page has to be crawlable for that tag to be seen —
 # a disallowed URL can still be indexed from links, title-less.
 
-# Sitemaps (static build-time routes + dynamic public projects + the docs
-# portal, which is a separate Astro build shipping its own sitemap index)
-Sitemap: https://velxio.dev/sitemap.xml
-Sitemap: https://velxio.dev/sitemap-projects.xml
-Sitemap: https://velxio.dev/docs/sitemap-index.xml
+# Sitemaps
+Sitemap: https://hocnhung.apexdev.website/sitemap.xml

@@ -15,7 +15,7 @@
 // parses the overlay file by text, so keep PRO_SEO_ROUTES a literal array.
 import { PRO_SEO_ROUTES } from '@pro/seoRoutes';
 
-const DOMAIN = 'https://velxio.dev';
+const DOMAIN = 'https://hocnhung.apexdev.website';
 
 export interface SeoMeta {
   title: string;
@@ -47,9 +47,9 @@ const OSS_SEO_ROUTES: SeoRoute[] = [
     changefreq: 'weekly',
     seoMeta: {
       title:
-        'Velxio — Free Online Circuit & Arduino Simulator | SPICE · ESP32 · RP2040 · ATtiny85 · Custom Chips',
+        'Học Nhúng Cho Bé — Phòng Thí Nghiệm Nhúng & Vi Điều Khiển (5–20 Tuổi) | Open Community Edition',
       description:
-        'Velxio is a free, open-source online circuit simulator. Real-time SPICE analog simulation (ngspice-WASM) wired to 19 boards: Arduino Uno/Mega/ATtiny85 (AVR8), ESP32 (Xtensa QEMU), ESP32-C3/CH32V003 (RISC-V via QEMU libqemu-riscv32), Raspberry Pi Pico (RP2040), Raspberry Pi 3 (Linux). Build custom chips in C/Rust. 100+ components, oscilloscope, voltmeter, ammeter — no cloud.',
+        'Học Nhúng Cho Bé là nền tảng thực hành mô phỏng mạch điện và lập trình vi điều khiển trực tuyến 100% miễn phí dành cho trẻ em và thanh thiếu niên Việt Nam (5–20 tuổi). Hỗ trợ mô phỏng SPICE, Arduino, ESP32, STM32, Raspberry Pi Pico, kết nối Cổng Lớp Học Nhúng và Kho Dự Án Sáng Tạo Cộng Đồng.',
       url: `${DOMAIN}/`,
     },
   },
@@ -62,10 +62,22 @@ const OSS_SEO_ROUTES: SeoRoute[] = [
     // with the homepage head, and Google indexed /editor AND /editor/ as
     // two pages with different impressions.
     seoMeta: {
-      title: 'Multi-Board Simulator Editor — Arduino, ESP32, RP2040, RISC-V | Velxio',
+      title:
+        'Học Nhúng Cho Bé — Phòng Thí Nghiệm Nhúng & Vi Điều Khiển (5–20 Tuổi) | Open Community Edition',
       description:
-        'Write, compile and simulate Arduino, ESP32, Raspberry Pi Pico, ESP32-C3, and Raspberry Pi 3 code in your browser. 19 boards, 5 CPU architectures, 48+ components. Free and open-source.',
+        'Phòng thực hành mô phỏng mạch điện và lập trình vi điều khiển trực tuyến: Arduino, ESP32, STM32, RP2040, Raspberry Pi. Biên dịch nạp code, sơ đồ trực quan, 100% miễn phí cho cộng đồng.',
       url: `${DOMAIN}/editor`,
+    },
+  },
+  {
+    path: '/community',
+    priority: 0.9,
+    changefreq: 'daily',
+    seoMeta: {
+      title: 'Kho Dự Án Cộng Đồng & Bảng Vàng Sáng Tạo — Học Nhúng Cho Bé',
+      description:
+        'Khám phá các dự án mạch sáng tạo từ các bạn nhỏ Việt Nam, thử nghiệm 1-click remix, thi đua điểm kinh nghiệm XP và vinh danh trên Bảng Vàng Cộng Đồng Học Nhúng.',
+      url: `${DOMAIN}/community`,
     },
   },
   {
@@ -309,15 +321,15 @@ const OSS_SEO_ROUTES: SeoRoute[] = [
     },
   },
 
-  // ── Classroom (institutional sales landing) — Phase 3 D3.7
+  // ── Classroom — Cổng Lớp Học Nhúng Cho Bé
   {
     path: '/classroom',
     priority: 0.85,
     changefreq: 'monthly',
     seoMeta: {
-      title: 'Velxio for educators — full Pro features for your classroom',
+      title: 'Cổng Lớp Học Nhúng Cho Bé — 100% Miễn Phí Cho Cộng Đồng',
       description:
-        'Velxio for Classroom gives every student in your course Pro-tier access (private projects, GitHub Sync, BOM and schematic exports, offline desktop) under a single institution contract. From $40/student/year with volume discounts.',
+        'Chương trình học lập trình nhúng 5 cấp độ chuẩn Quốc gia dành cho học sinh Việt Nam. 100% miễn phí vĩnh viễn, cấp chứng chỉ tốt nghiệp khi hoàn thành.',
       url: `${DOMAIN}/classroom`,
     },
   },

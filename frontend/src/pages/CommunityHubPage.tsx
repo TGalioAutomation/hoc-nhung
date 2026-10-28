@@ -26,10 +26,17 @@ import {
 import { AppHeader } from '../components/layout/AppHeader';
 import { useCommunityHubStore } from '../store/useCommunityHubStore';
 import { CommunityLeaderboard } from '../components/community/CommunityLeaderboard';
+import { useSEO } from '../utils/useSEO';
 import type { AgeGroupFilter, CommunityProject } from '../types/community';
 
 export const CommunityHubPage: React.FC = () => {
   const navigate = useNavigate();
+  useSEO({
+    title: 'Kho Dự Án Cộng Đồng & Bảng Vàng Sáng Tạo — Học Nhúng Cho Bé',
+    description:
+      'Khám phá các dự án mạch sáng tạo từ các bạn nhỏ Việt Nam, thử nghiệm 1-click remix, thi đua điểm kinh nghiệm XP và vinh danh trên Bảng Vàng Cộng Đồng Học Nhúng.',
+    url: 'https://hocnhung.apexdev.website/community',
+  });
   const {
     activeTab,
     ageGroup,

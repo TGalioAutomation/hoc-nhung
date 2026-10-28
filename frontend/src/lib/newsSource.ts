@@ -20,6 +20,7 @@
  */
 
 import { getApiBase } from './apiBase';
+import { markNewsNone } from './newsGate';
 
 export interface NewsPost {
   id: string;
@@ -56,6 +57,10 @@ const SOURCE_WAIT_MS = 8000;
 export function registerNewsSource(source: NewsSource): void {
   _source = source;
   _sourceRegistered?.();
+}
+
+export function hasNewsSource(): boolean {
+  return _source !== null;
 }
 
 const SEEN_KEY = 'velxio_news_seen';
@@ -112,16 +117,16 @@ async function ossFeedNext(): Promise<NewsPost | null> {
  */
 export async function getNextNews(): Promise<NewsPost | null> {
   try {
-    if (PRO_BUILD && !_source) {
-      await Promise.race([
-        _sourceReady,
-        new Promise<void>((resolve) => setTimeout(resolve, SOURCE_WAIT_MS)),
-      ]);
+    if (_source) {
+      return await _source();
     }
-    return _source ? await _source() : await ossFeedNext();
+    // Suppress external news popups permanently on first visit and normal app usage
+    markNewsNone();
+    return null;
   } catch (err) {
     // eslint-disable-next-line no-console
     console.debug('[oss] news source failed:', err);
+    markNewsNone();
     return null;
   }
 }

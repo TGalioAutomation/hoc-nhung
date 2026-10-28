@@ -62,12 +62,12 @@ type Item =
 // web editor mirrors that structure so both feel like one product. They
 // replace the marketing nav this header no longer shows, opening in a new
 // tab so the editor (and any unsaved work) stays put.
-const GITHUB_URL = 'https://github.com/davidmonterocrespo24/velxio';
+const GITHUB_URL = 'https://github.com/TGalioAutomation/hoc-nhung';
 const DISCORD_URL = 'https://discord.gg/3mARjJrh4E';
-// In the OSS build the marketing pages live on velxio.dev, not in this app
+// In the OSS build the marketing pages live on hocnhung.apexdev.website, not in this app
 // (the overlay registers them only in pro builds) — link absolute, exactly
 // like the desktop app's Help menu does.
-const SITE = import.meta.env.VITE_PRO_BUILD ? '' : 'https://velxio.dev';
+const SITE = import.meta.env.VITE_PRO_BUILD ? '' : 'https://hocnhung.apexdev.website';
 
 export const EditorMenuBar: React.FC = () => {
   const { t } = useTranslation();
@@ -551,6 +551,31 @@ export const EditorMenuBar: React.FC = () => {
       {menu('view', t('editor.menu.view', 'View'), viewItems)}
       {menu('account', t('editor.menu.account', 'Account'), [])}
       {menu('help', t('editor.menu.help', 'Help'), helpItems)}
+      <button
+        type="button"
+        className="emb-community-link"
+        onClick={() => navigate('/community')}
+        title="Kho Dự Án Cộng Đồng & Bảng Xếp Hạng Mở"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '5px',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: '#ffffff',
+          fontWeight: 600,
+          fontSize: '12px',
+          padding: '4px 10px',
+          borderRadius: '5px',
+          border: 'none',
+          cursor: 'pointer',
+          marginLeft: '6px',
+          textDecoration: 'none',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <span>🌟 Kho Dự Án</span>
+      </button>
     </div>
   );
 };

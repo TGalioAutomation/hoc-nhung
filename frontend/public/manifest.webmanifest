@@ -1,7 +1,7 @@
 {
-  "name": "Velxio — Circuit & Arduino Simulator",
-  "short_name": "Velxio",
-  "description": "Online circuit and Arduino simulator. ESP32, RP2040, Pi Pico, ATtiny85, SPICE analog simulation, 100+ components. Free and open source.",
+  "name": "Học Nhúng Cho Bé — Open Community Edition",
+  "short_name": "Học Nhúng",
+  "description": "Học Nhúng Cho Bé — Nền tảng học lập trình nhúng & vi điều khiển 100% miễn phí cho cộng đồng trẻ em và thanh thiếu niên Việt Nam (5–20 tuổi).",
   "start_url": "/editor",
   "scope": "/",
   "display": "standalone",
@@ -9,7 +9,7 @@
   "background_color": "#0d0d0f",
   "theme_color": "#007acc",
   "categories": ["developer", "education", "productivity"],
-  "lang": "en",
+  "lang": "vi",
   "icons": [
     {
       "src": "/favicon-16x16.png",
@@ -45,7 +45,7 @@
       "src": "/og-image.svg",
       "sizes": "1200x630",
       "type": "image/svg+xml",
-      "label": "Velxio Arduino Emulator"
+      "label": "Phòng Thí Nghiệm Học Nhúng Cho Bé"
     }
   ]
 }

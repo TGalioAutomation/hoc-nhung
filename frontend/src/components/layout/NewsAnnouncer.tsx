@@ -27,7 +27,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { getNextNews, type NewsPost } from '../../lib/newsSource';
+import { getNextNews, hasNewsSource, type NewsPost } from '../../lib/newsSource';
 import { reportNewsEvent, type NewsCloseVia } from '../../lib/newsEvents';
 import { markNewsShowing, markNewsNone, markNewsClosed } from '../../lib/newsGate';
 import { NewsMarkdown } from './NewsMarkdown';
@@ -89,6 +89,12 @@ export function NewsAnnouncer() {
 
   useEffect(() => {
     let cancelled = false;
+    // Suppress auto-open on startup when no source is explicitly registered.
+    // Transition newsGate to 'clear' immediately with zero delay.
+    if (!hasNewsSource()) {
+      markNewsNone();
+      return;
+    }
     const timer = setTimeout(() => {
       void getNextNews().then((p) => {
         if (cancelled) return;
