@@ -1,0 +1,17 @@
+FROM ghcr.io/davidmonterocrespo24/velxio:master
+
+# Remove pre-rendered static route directories from upstream image so our SPA router handles all routes
+RUN rm -rf /usr/share/nginx/html/editor \
+           /usr/share/nginx/html/examples \
+           /usr/share/nginx/html/tools \
+           /usr/share/nginx/html/assets
+
+# Overlay compiled Vietnamese Community + 5-Level Classroom frontend bundle
+COPY frontend/dist/ /usr/share/nginx/html/
+
+# Overlay SQLite + JWT + 5-Level Classroom Account Management backend
+COPY backend/app/pro/ /app/app/pro/
+
+# Overlay fast-boot production entrypoint
+COPY docker/entrypoint.vps.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
