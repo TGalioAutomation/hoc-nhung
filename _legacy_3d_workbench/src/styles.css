@@ -1,0 +1,1702 @@
+/**
+ * src/styles.css
+ * Visual & 3D WebGL Workbench Styling & Tactile Retro-Industrial Design System
+ * Strictly derived from clean-room/VISUAL_3D_SPEC.md & SPEC.approved.md
+ */
+
+/* =========================================================================
+   1. Design Tokens & Tactile Workbench Palette (VISUAL_3D_SPEC.md: Section 2)
+   ========================================================================= */
+
+:root {
+  /* Workbench Tactile Palette */
+  --bg: #f8f1e6;
+  --bg-deep: #f2e8da;
+  --card: #fffbf6;
+  --card-soft: rgba(255, 251, 245, 0.95);
+  --panel: rgba(251, 246, 238, 0.85);
+  --code-bg: #fffcf8;
+  --line: #e5d8c5;
+  --line-strong: #d6c6af;
+  --line-soft: #efe6d8;
+  --navy: #0f2239;
+  --navy-2: #1b2c44;
+  --ink: #5b6168;
+  --muted: #6e7277;
+  --faint: #a49a8c;
+  --accent: #f86b1d;
+  --accent-deep: #dc5812;
+  --accent-soft: #fdecdd;
+  --green: #27a689;
+  --shadow: 0 10px 26px -20px rgba(110, 78, 38, 0.45);
+  --shadow-card: 0 4px 14px rgba(44, 28, 12, 0.12);
+
+  /* Code Syntax Highlighting */
+  --kw: #2c5f9e;
+  --fn: #dc6a2a;
+  --num: #3a6aa6;
+  --str: #3b9450;
+  --gutter: #aea79e;
+
+  /* Typography */
+  --sans: "Barlow", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --cond: "Barlow Semi Condensed", "Barlow", sans-serif;
+  --mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* Backwards Compatibility Token Aliases */
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--card);
+  --color-surface-hover: var(--bg-deep);
+  --color-border: var(--line);
+  --color-text: var(--navy);
+  --color-text-bright: #0b1528;
+  --color-text-muted: var(--ink);
+  --color-primary: var(--accent);
+  --color-primary-glow: rgba(248, 107, 29, 0.35);
+  --color-success: var(--green);
+  --color-warning: #f0a53a;
+  --color-danger: #e04a3f;
+  --color-danger-glow: rgba(224, 74, 63, 0.4);
+
+  /* Wire Color Palette (RULE-002) */
+  --wire-signal-amber: #f0a53a;
+  --wire-signal-blue: #3d6fc4;
+  --wire-power-3v3: #e04a3f;
+  --wire-power-5v: #b82e24;
+  --wire-gnd: #2f3547;
+
+  /* Dimensions */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --header-height: 64px;
+  --serial-height: 92px;
+  --transition-speed: 0.2s;
+}
+
+/* =========================================================================
+   2. Age-Band Cognitive Themes (RULE-001)
+   ========================================================================= */
+
+/* Band A: Kid Spark (5–8) */
+html[data-age-band='band-a'] {
+  --accent: #ff5252;
+  --accent-soft: #ffebee;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  font-size: 16px;
+}
+html[data-age-band='band-a'] .hide-on-band-a { display: none !important; }
+
+/* Band B: Block Explorer (9–13) */
+html[data-age-band='band-b'] {
+  --accent: #f86b1d;
+  --accent-soft: #fdecdd;
+  font-size: 15px;
+}
+html[data-age-band='band-b'] .hide-on-band-b { display: none !important; }
+
+/* Band C: Maker Pro (14–20) */
+html[data-age-band='band-c'] {
+  --accent: #2c5f9e;
+  --accent-soft: #e3f2fd;
+  font-size: 14px;
+}
+html[data-age-band='band-c'] .hide-on-band-c { display: none !important; }
+
+/* Reduced Motion (RULE-010) */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+html[data-reduced-motion='true'] * {
+  animation-duration: 0.001ms !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* =========================================================================
+   3. Base Layout & 100vh Zero Scroll Lock (VISUAL_3D_SPEC.md: Section 1.1)
+   ========================================================================= */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--bg);
+  color: var(--navy);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The Fixed 1672px x 941px Artboard */
+.artboard {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1672px;
+  height: 941px;
+  transform-origin: 0 0;
+  overflow: hidden;
+  background-color: var(--bg);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
+}
+
+/* Desktop 4-Zone Workbench Layout (min-width: 960px): Locked 100vh Grid */
+@media (min-width: 960px) {
+  html, body {
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
+
+  body.compact {
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
+
+  .artboard, body.compact .artboard {
+    position: relative !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    transform: none !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .app-header {
+    position: relative !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    padding: 0 16px !important;
+    z-index: 40 !important;
+    border-bottom: 1.5px solid var(--line) !important;
+  }
+
+  .app-workspace, body.compact .app-workspace {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: 72px 1fr 420px !important;
+    grid-template-rows: 1fr 112px !important;
+    height: calc(100vh - 48px) !important;
+    max-height: calc(100vh - 48px) !important;
+    overflow: hidden !important;
+  }
+
+  .icon-rail {
+    grid-column: 1 !important;
+    grid-row: 1 / span 2 !important;
+    width: 72px !important;
+    height: 100% !important;
+    z-index: 25 !important;
+  }
+
+  .lessons-sidebar.drawer-sidebar, body.compact .lessons-sidebar {
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 72px !important;
+    width: 280px !important;
+    height: 100% !important;
+    z-index: 50 !important;
+    display: none !important;
+    box-shadow: 4px 0 24px rgba(15, 34, 57, 0.15) !important;
+  }
+
+  .lessons-sidebar.drawer-sidebar.open, body.compact .lessons-sidebar.drawer-sidebar.open {
+    display: flex !important;
+  }
+
+  .viewport-area.stage, body.compact .viewport-area {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    overflow: hidden !important;
+  }
+
+  .right-panel.stacked-panels, body.compact .right-panel {
+    grid-column: 3 !important;
+    grid-row: 1 / span 2 !important;
+    position: relative !important;
+    width: 420px !important;
+    height: 100% !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    gap: 8px !important;
+    padding: 8px 10px !important;
+  }
+
+  .bottom-carousel, body.compact .bottom-carousel {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    position: relative !important;
+    width: 100% !important;
+    height: 112px !important;
+    max-height: 112px !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    overflow: hidden !important;
+    z-index: 10 !important;
+  }
+}
+
+/* Mobile & Tablet Compact Mode (max-width: 959px) */
+@media (max-width: 959px) {
+  body.compact {
+    overflow-y: auto !important;
+    height: auto !important;
+  }
+
+  body.compact .artboard {
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    transform: none !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  body.compact .app-workspace {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+  }
+
+  body.compact .icon-rail {
+    display: none !important;
+  }
+
+  body.compact .lessons-sidebar {
+    position: relative !important;
+    width: 100% !important;
+    height: 220px !important;
+    display: flex !important;
+  }
+
+  body.compact .viewport-area {
+    position: relative !important;
+    width: 100% !important;
+    height: 480px !important;
+  }
+
+  body.compact .right-panel {
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  body.compact .bottom-carousel {
+    position: relative !important;
+    width: 100% !important;
+  }
+}
+
+/* =========================================================================
+   4. Top App Header (Brand, Tabs, XP, Actions)
+   ========================================================================= */
+
+.app-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  background: var(--card);
+  border-bottom: 1.5px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  z-index: 40;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-wifi-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+  border-radius: 10px;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.brand-title {
+  font-family: var(--cond);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--navy);
+  display: block;
+  line-height: 1.1;
+}
+
+.brand-subtitle {
+  font-size: 0.8rem;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* Age Band Switcher */
+.age-band-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-deep);
+  padding: 4px;
+  border-radius: 24px;
+  border: 1.5px solid var(--line);
+}
+
+.band-tab {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: var(--cond);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.band-tab:hover {
+  color: var(--navy);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.band-tab.active {
+  background: var(--card);
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Gamification Progress Bar & Streak */
+.gamification-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card-soft);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--line);
+}
+
+.xp-badge {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.streak-badge {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #e67e22;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff4e6;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid #ffd8a8;
+}
+
+.progress-track {
+  width: 90px;
+  height: 8px;
+  background: var(--bg-deep);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--green));
+  transition: width 0.3s ease;
+}
+
+.progress-label {
+  font-size: 0.78rem;
+  font-family: var(--mono);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Header Tools: Search Box & Board Selector */
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all var(--transition-speed);
+}
+
+.search-box:hover {
+  border-color: var(--accent);
+  background: var(--card);
+}
+
+.search-placeholder {
+  color: var(--muted);
+}
+
+.search-kbd {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 0.65rem;
+  font-family: var(--mono);
+  color: var(--ink);
+}
+
+.board-selector {
+  display: flex;
+  background: var(--bg-deep);
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+
+.btn-board-type {
+  border: none;
+  background: transparent;
+  padding: 3px 8px;
+  font-family: var(--cond);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+}
+
+.btn-board-type.active {
+  background: var(--card);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Header Tools Actions */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--navy);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+}
+
+.btn-icon:hover {
+  background: var(--bg-deep);
+  border-color: var(--line-strong);
+}
+
+/* =========================================================================
+   5. Workspace Grid Layout (VISUAL_3D_SPEC.md: Section 1.2)
+   ========================================================================= */
+
+.app-workspace {
+  position: absolute;
+  top: var(--header-height);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+}
+
+/* Zone 1: Left Icon Rail (72px wide) */
+.icon-rail {
+  width: 72px;
+  background: var(--card);
+  border-right: 1.5px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0;
+  gap: 6px;
+  z-index: 20;
+}
+
+.rail-btn {
+  width: 56px;
+  height: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  color: var(--ink);
+  transition: all var(--transition-speed);
+}
+
+.rail-btn:hover {
+  background: var(--bg-deep);
+  color: var(--navy);
+  border-color: var(--line);
+}
+
+.rail-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  border-color: var(--accent);
+}
+
+.rail-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.rail-text {
+  font-size: 0.62rem;
+  font-family: var(--cond);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Collapsible Drawer Lessons Sidebar */
+.lessons-sidebar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 104px;
+  background: var(--card);
+  box-shadow: inset -1.5px 0 0 var(--line-soft);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.lessons-sidebar.drawer-sidebar {
+  left: 72px;
+  width: 280px;
+  box-shadow: 4px 0 24px rgba(15, 34, 57, 0.15);
+  border-right: 1.5px solid var(--line);
+  z-index: 45;
+}
+
+.sidebar-header {
+  padding: 10px 12px;
+  border-bottom: 1.5px solid var(--line-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.btn-close-drawer {
+  width: 26px;
+  height: 26px;
+  font-size: 0.75rem;
+}
+
+.sidebar-title {
+  font-family: var(--cond);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--ink);
+  display: block;
+}
+
+.lesson-num {
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.lessons-list {
+  list-style: none;
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lesson-item {
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--transition-speed);
+}
+
+.lesson-item:hover {
+  background: var(--bg-deep);
+}
+
+.lesson-item.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-deep);
+}
+
+.lesson-item-idx {
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: block;
+}
+
+.lesson-item-name {
+  font-size: 0.68rem;
+  color: var(--ink);
+  line-height: 1.1;
+  display: block;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================================
+   6. 3D WebGL Canvas Stage (VISUAL_3D_SPEC.md: Section 1.2, 3)
+   ========================================================================= */
+
+.viewport-area.stage {
+  position: absolute;
+  top: 0;
+  left: 104px;
+  right: 504px;
+  bottom: 120px;
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 40% 45%, #fffcf6b3, transparent 60%), #f8f1e6;
+  z-index: 1;
+}
+
+.board-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 1;
+}
+
+.insp-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 2D SVG Hardware Stage Mockup (Fallback & E2E DOM Harness) */
+.hardware-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0.001; /* Invisible in 3D WebGL mode while keeping DOM presence for tests */
+  z-index: 2;
+}
+
+/* Multi-Card Perimeter Inspector Layer (VISUAL_3D_SPEC.md: Section 5) */
+.inspector-cards-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.inspector-callout-card {
+  position: absolute;
+  width: 176px;
+  padding: 7px 10px;
+  background: rgba(255, 251, 246, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(15, 34, 57, 0.08);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+}
+
+.inspector-callout-card:hover,
+.inspector-callout-card.active {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(248, 107, 29, 0.25);
+  background: var(--card);
+}
+
+.callout-tag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  font-family: var(--cond);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  margin-bottom: 2px;
+}
+
+.callout-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.15;
+  margin-bottom: 2px;
+}
+
+.callout-desc {
+  font-size: 0.66rem;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.callout-pin {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: var(--accent-deep);
+  margin-top: 3px;
+}
+
+/* 5 Perimeter Slot Positions */
+.slot-top-left {
+  top: 16px;
+  left: 20px;
+}
+
+.slot-top-center {
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.slot-mid-right {
+  top: 28%;
+  right: 20px;
+}
+
+.slot-bottom-left {
+  bottom: 74px;
+  left: 20px;
+}
+
+.slot-bottom-right {
+  bottom: 175px;
+  right: 20px;
+}
+
+/* Floating Component Inspector Card (Retained for Test Suite & Detailed Inspection) */
+.inspector-card {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  width: 292px;
+  background: var(--card-soft);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+  z-index: 25;
+  display: none;
+}
+
+.inspector-card.open {
+  display: block;
+}
+
+.insp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  cursor: grab;
+}
+
+.insp-title {
+  font-family: var(--cond);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.btn-close-insp {
+  width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+}
+
+.insp-desc {
+  font-size: 0.82rem;
+  color: var(--ink);
+  line-height: 1.35;
+  margin-bottom: 8px;
+}
+
+.insp-pins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Viewport Camera Toolbar (.viewbar) Centered Bottom Pill */
+.viewport-toolbar.viewbar {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  display: flex;
+  gap: 5px;
+  background: rgba(255, 251, 246, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid var(--line);
+  border-radius: 24px;
+  padding: 4px 10px;
+  box-shadow: 0 4px 14px rgba(15, 34, 57, 0.1);
+}
+
+.viewport-toolbar button {
+  border: 1px solid var(--line);
+  background: var(--card);
+  padding: 4px 9px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-family: var(--cond);
+  font-weight: 700;
+  color: var(--navy);
+  cursor: pointer;
+  transition: all var(--transition-speed);
+}
+
+.viewport-toolbar button:hover {
+  background: var(--bg-deep);
+  border-color: var(--line-strong);
+}
+
+.viewport-toolbar button.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Floating Schematic Card (VISUAL_3D_SPEC.md: Section 6) */
+.floating-schematic.schematic-card {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 200px;
+  height: 135px;
+  min-width: 184px;
+  min-height: 126px;
+  max-width: 500px;
+  max-height: 380px;
+  background: rgba(255, 251, 246, 0.96);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.floating-schematic.hidden {
+  display: none !important;
+}
+
+.floating-schematic.open {
+  display: flex;
+}
+
+.schematic-header {
+  padding: 6px 10px;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: grab;
+  font-size: 0.8rem;
+}
+
+.sch-grip {
+  background: transparent;
+  border: none;
+  cursor: nwse-resize;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.schematic-body {
+  padding: 8px;
+  overflow: auto;
+  flex: 1;
+  font-size: 0.75rem;
+}
+
+/* Interactive Control Overlay at bottom of stage */
+.interactive-overlay {
+  position: absolute;
+  bottom: 12px;
+  left: 230px;
+  right: 220px;
+  background: var(--card-soft);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: var(--shadow-card);
+  z-index: 10;
+}
+
+.interactive-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.interactive-title {
+  font-family: var(--cond);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.interactive-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* =========================================================================
+   7. Right Stacked Panels (Info Card + Code Card & Serial)
+   ========================================================================= */
+
+.right-panel.stacked-panels {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 504px;
+  bottom: 0;
+  background: var(--panel);
+  border-left: 1.5px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+  z-index: 10;
+  overflow-y: auto;
+}
+
+/* Upper Panel: 5-Tab Info Card */
+.info-card {
+  min-height: 340px;
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 10px 12px;
+}
+
+.card-lesson-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.lesson-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lesson-chip {
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.lesson-step-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-step {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg-deep);
+  font-size: 0.65rem;
+  color: var(--navy);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-speed);
+}
+
+.btn-step:hover {
+  background: var(--card);
+  border-color: var(--accent);
+}
+
+.lesson-card-title {
+  font-family: var(--cond);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.2;
+}
+
+/* 5 Card Tabs: OVERVIEW, PINOUT, QUIZ, SAFE-GUARD, PROGRESS */
+.card-tabs-nav {
+  display: flex;
+  gap: 3px;
+  background: var(--bg-deep);
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  margin-bottom: 8px;
+}
+
+.card-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 4px 2px;
+  font-family: var(--cond);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--ink);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--transition-speed);
+}
+
+.card-tab:hover {
+  color: var(--navy);
+}
+
+.card-tab.active {
+  background: var(--card);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.tab-panels-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.lesson-overview-summary {
+  font-size: 0.8rem;
+  color: var(--ink);
+  line-height: 1.35;
+  margin-top: 8px;
+}
+
+.safeguard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.safeguard-item {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  font-size: 0.78rem;
+}
+
+.safeguard-item strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 0.8rem;
+}
+
+.safeguard-item.warn {
+  background: #fff9db;
+  border-color: #ffe066;
+  color: #856404;
+}
+
+.safeguard-item.alert {
+  background: #fff5f5;
+  border-color: #ffc9c9;
+  color: #c92a2a;
+}
+
+.safeguard-item.info {
+  background: #e7f5ff;
+  border-color: #a5d8ff;
+  color: #1864ab;
+}
+
+.btn-sm {
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  font-family: var(--cond);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.story-cards-container {
+  padding: 8px 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.blocks-workspace-container {
+  padding: 8px 0;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+/* Lower Panel: Code Card & Serial Monitor */
+.code-card {
+  flex: 1;
+  min-height: 280px;
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 8px 10px;
+}
+
+.code-card-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 6px;
+}
+
+.code-card-heading {
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: var(--navy);
+}
+
+.code-editor-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.lang-toggle {
+  display: flex;
+  gap: 3px;
+}
+
+.lang-btn {
+  border: 1px solid var(--line);
+  background: var(--card);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: var(--cond);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.lang-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent-deep);
+}
+
+.code-display {
+  flex: 1;
+  min-height: 70px;
+  max-height: 140px;
+  background: var(--code-bg);
+  padding: 8px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.code-line {
+  display: flex;
+  gap: 8px;
+  line-height: 1.45;
+}
+
+.code-line.is-running {
+  background: rgba(248, 107, 29, 0.15);
+  border-left: 3px solid var(--accent);
+}
+
+.line-num {
+  color: var(--gutter);
+  width: 24px;
+  text-align: right;
+  user-select: none;
+}
+
+.code-actions-bar {
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-run {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition-speed);
+}
+
+.btn-run.btn-run-circular {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(248, 107, 29, 0.35);
+}
+
+.btn-run.btn-run-circular .run-icon {
+  margin-left: 2px;
+  font-size: 0.85rem;
+}
+
+.btn-run:hover {
+  background: var(--accent-deep);
+}
+
+.btn-stop {
+  background: var(--color-danger);
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.execution-state-label {
+  font-size: 0.72rem;
+  color: var(--ink);
+  margin-left: auto;
+}
+
+/* Serial Monitor Panel */
+.serial-monitor-panel {
+  background: #111a24;
+  color: #ecf0f1;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 56px;
+  max-height: 240px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.serial-resize-grip {
+  height: 6px;
+  background: #243342;
+  cursor: ns-resize;
+}
+
+.serial-header {
+  padding: 3px 8px;
+  background: #1b2631;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: #a4b0be;
+}
+
+.serial-logs {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.serial-line {
+  line-height: 1.35;
+}
+.serial-line.info { color: #54a0ff; }
+.serial-line.success { color: #2ed573; }
+.serial-line.error { color: #ff6b6b; }
+
+/* Zone 4: Bottom Lesson Carousel (VISUAL_3D_SPEC.md: Section 1.2) */
+.bottom-carousel {
+  position: absolute;
+  bottom: 0;
+  left: 104px;
+  right: 504px;
+  height: 112px;
+  background: var(--card);
+  border-top: 1.5px solid var(--line);
+  z-index: 10;
+  padding: 4px 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.carousel-strip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.carousel-strip-title {
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.carousel-nav-arrows {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-carousel-arrow {
+  width: 22px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--bg-deep);
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--navy);
+  transition: all var(--transition-speed);
+}
+
+.btn-carousel-arrow:hover {
+  background: var(--card);
+  border-color: var(--accent);
+}
+
+.carousel-track {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.carousel-track::-webkit-scrollbar {
+  height: 4px;
+}
+
+.carousel-track::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 2px;
+}
+
+.carousel-card {
+  flex: 0 0 120px;
+  height: 74px;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all var(--transition-speed);
+}
+
+.carousel-card:hover {
+  border-color: var(--accent);
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+}
+
+.carousel-card.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  border-width: 2px;
+  box-shadow: 0 2px 8px rgba(248, 107, 29, 0.25);
+}
+
+.carousel-card-num {
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+
+.carousel-card-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--navy);
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================================
+   9. Modals (Pinout, Quiz, Settings)
+   ========================================================================= */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 34, 57, 0.45);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-backdrop.open {
+  display: flex;
+}
+
+.modal-box {
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 640px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 14px 20px;
+  background: var(--bg-deep);
+  border-bottom: 1.5px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-family: var(--cond);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.modal-content {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.pin-tag {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.pin-tag.power { background: #ffebee; color: #c62828; }
+.pin-tag.gnd { background: #eceff1; color: #37474f; }
+.pin-tag.input-only { background: #fff3e0; color: #e65100; }
+.pin-tag.io { background: #e8f5e9; color: #2e7d32; }
+
+/* Interactive Widgets */
+.piano-key {
+  padding: 14px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.piano-key:active {
+  transform: translateY(3px);
+  background: var(--accent-soft) !important;
+}
+
+.quiz-opt-btn {
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.quiz-opt-btn:hover {
+  background: var(--bg-deep);
+}
+.quiz-opt-btn.correct {
+  background: #e8f8f5;
+  border-color: var(--green);
+  color: var(--green);
+}
+.quiz-opt-btn.wrong {
+  background: #fdebd0;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}

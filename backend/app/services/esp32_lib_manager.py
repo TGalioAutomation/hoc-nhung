@@ -35,6 +35,8 @@ Events emitted via callback(event_type, data):
   gpio_routing_clear {gpio: int}
   error         {message: str}
 """
+from __future__ import annotations
+
 import asyncio
 import base64
 import dataclasses
@@ -202,6 +204,8 @@ class _WorkerInstance:
     running:    bool = True
     wifi_enabled: bool = False
     wifi_hostfwd_port: int = 0
+    created_at: float = dataclasses.field(default_factory=time.time)
+    last_activity: float = dataclasses.field(default_factory=time.time)
 
 
 # ── Manager ───────────────────────────────────────────────────────────────────
@@ -215,6 +219,7 @@ class EspLibManager:
     def __init__(self):
         self._instances: dict[str, _WorkerInstance] = {}
         self._instances_lock = threading.Lock()
+        self._reaper_task: asyncio.Task | None = None
 
     # ── Availability ──────────────────────────────────────────────────────────
 
@@ -236,6 +241,86 @@ class EspLibManager:
         with self._instances_lock:
             return self._instances.get(client_id)
 
+    def touch(self, client_id: str) -> None:
+        """Record activity for a client instance."""
+        with self._instances_lock:
+            inst = self._instances.get(client_id)
+            if inst:
+                inst.last_activity = time.time()
+
+    async def reap_idle_sessions(self, exclude_client_id: str | None = None) -> list[str]:
+        """Stop instances that have exited or exceeded VELXIO_QEMU_IDLE_TIMEOUT_S."""
+        now = time.time()
+        timeout = float(os.environ.get('VELXIO_QEMU_IDLE_TIMEOUT_S', '600'))
+        to_stop: list[tuple[str, str]] = []
+
+        with self._instances_lock:
+            for cid, inst in list(self._instances.items()):
+                if cid == exclude_client_id:
+                    continue
+                if not inst.running or inst.process.poll() is not None:
+                    to_stop.append((cid, 'process exited'))
+                elif (now - inst.last_activity) > timeout:
+                    to_stop.append((cid, f'idle timeout ({int(now - inst.last_activity)}s > {int(timeout)}s)'))
+
+        reaped = []
+        for cid, reason in to_stop:
+            logger.info('Reaping QEMU session %s: %s', cid, reason)
+            inst = self.get_instance(cid)
+            if inst:
+                try:
+                    await inst.callback('error', {
+                        'message': f'Phiên mô phỏng QEMU tự động đóng do không hoạt động quá {int(timeout)} giây.'
+                    })
+                except Exception:
+                    pass
+            await self.stop_instance(cid)
+            reaped.append(cid)
+        return reaped
+
+    async def enforce_session_capacity(self, exclude_client_id: str | None = None) -> None:
+        """Enforce VELXIO_MAX_QEMU_SESSIONS concurrent limit by evicting LRU sessions."""
+        max_sessions = int(os.environ.get('VELXIO_MAX_QEMU_SESSIONS', '25'))
+        while True:
+            with self._instances_lock:
+                active_cids = [cid for cid in self._instances.keys() if cid != exclude_client_id]
+                if len(active_cids) < max_sessions:
+                    break
+                # Find the least recently active (LRU) instance
+                lru_cid = min(active_cids, key=lambda c: self._instances[c].last_activity)
+
+            logger.warning('QEMU session limit reached (%d/%d). Evicting LRU session: %s',
+                           len(active_cids) + 1, max_sessions, lru_cid)
+            lru_inst = self.get_instance(lru_cid)
+            if lru_inst:
+                try:
+                    await lru_inst.callback('error', {
+                        'message': 'Phiên mô phỏng QEMU bị thu hồi do đạt giới hạn số lượng phiên đồng thời.'
+                    })
+                except Exception:
+                    pass
+            await self.stop_instance(lru_cid)
+
+    def _ensure_reaper_task(self) -> None:
+        if self._reaper_task is None or self._reaper_task.done():
+            try:
+                loop = asyncio.get_running_loop()
+                self._reaper_task = loop.create_task(self._reaper_loop())
+            except RuntimeError:
+                pass
+
+    async def _reaper_loop(self) -> None:
+        """Background loop to periodically sweep idle QEMU sessions."""
+        while True:
+            try:
+                await asyncio.sleep(30)
+                if self._instances:
+                    await self.reap_idle_sessions()
+            except asyncio.CancelledError:
+                break
+            except Exception as exc:
+                logger.debug('Error in QEMU reaper loop: %s', exc)
+
     async def start_instance(
         self,
         client_id:    str,
@@ -255,6 +340,11 @@ class EspLibManager:
         if not firmware_b64:
             logger.info('start_instance %s: no firmware — skipping worker launch', client_id)
             return
+
+        # Clean up any dead/idle sessions, then enforce session limit (LRU eviction)
+        await self.reap_idle_sessions(exclude_client_id=client_id)
+        await self.enforce_session_capacity(exclude_client_id=client_id)
+        self._ensure_reaper_task()
 
         machine  = _MACHINE.get(board_type, 'esp32-picsimlab')
         lib_path = lib_riscv_path() if board_type in _RISCV_BOARDS else lib_xtensa_path()
@@ -313,6 +403,8 @@ class EspLibManager:
             loop              = loop,
             wifi_enabled      = wifi_enabled,
             wifi_hostfwd_port = wifi_hostfwd_port,
+            created_at        = time.time(),
+            last_activity     = time.time(),
         )
 
         with self._instances_lock:
@@ -597,16 +689,20 @@ class EspLibManager:
             inst = self._instances.get(client_id)
         if not inst:
             return {'running': False}
+        now = time.time()
         return {
             'running': True,
             'alive':   inst.process.returncode is None,
             'board':   inst.board_type,
+            'idle_s':  round(now - inst.last_activity, 1),
+            'age_s':   round(now - inst.created_at, 1),
         }
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 
     def _write_cmd(self, inst: _WorkerInstance, cmd: dict) -> None:
         """Write one JSON command line to the worker's stdin (thread-safe)."""
+        inst.last_activity = time.time()
         try:
             with inst.stdin_lock:
                 assert inst.process.stdin is not None
@@ -638,6 +734,7 @@ class EspLibManager:
                     logger.debug('[%s] ignoring non-JSON worker line: %s',
                                  client_id, raw[:200])
                     continue
+                inst.last_activity = time.time()
                 try:
                     event = json.loads(raw)
                 except Exception:

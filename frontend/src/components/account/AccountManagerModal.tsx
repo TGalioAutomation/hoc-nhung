@@ -1,0 +1,1743 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Crown,
+  User as UserIcon,
+  Shield,
+  Cloud,
+  X,
+  Check,
+  LogOut,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Key,
+  Download,
+  AlertCircle,
+} from 'lucide-react';
+import axios from 'axios';
+import { useAuthStore, type User } from '../../store/useAuthStore';
+import { useEditorStore } from '../../store/useEditorStore';
+import { useSimulatorStore } from '../../store/useSimulatorStore';
+import { useProjectStore } from '../../store/useProjectStore';
+import {
+  getMyProjects,
+  createProject,
+  deleteProject,
+  type ProjectResponse,
+} from '../../services/projectService';
+import { getApiBase } from '../../lib/apiBase';
+
+export const AccountManagerModal: React.FC = () => {
+  const {
+    user,
+    isAccountModalOpen,
+    isAuthModalOpen,
+    accountModalTab,
+    closeAccountModal,
+    closeAuthModal,
+    login,
+    register,
+    logout,
+    updateProfile,
+    loading: authLoading,
+  } = useAuthStore();
+
+  const [activeTab, setActiveTab] = useState<'profile' | 'admin' | 'projects'>('profile');
+
+  // Auth form states
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [ident, setIdent] = useState('');
+  const [password, setPassword] = useState('');
+  const [regUsername, setRegUsername] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regDisplayName, setRegDisplayName] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Profile update state
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [updatingProfile, setUpdatingProfile] = useState(false);
+
+  // Admin users state
+  const [adminUsers, setAdminUsers] = useState<User[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminError, setAdminError] = useState<string | null>(null);
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newDisplayName, setNewDisplayName] = useState('');
+  const [newRole, setNewRole] = useState<'user' | 'admin'>('user');
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [resetPwdUserId, setResetPwdUserId] = useState<string | null>(null);
+  const [newResetPassword, setNewResetPassword] = useState('');
+
+  // Cloud projects state
+  const [projects, setProjects] = useState<ProjectResponse[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectDesc, setNewProjectDesc] = useState('');
+  const [newProjectPublic, setNewProjectPublic] = useState(true);
+  const [savingProject, setSavingProject] = useState(false);
+  const [projectMsg, setProjectMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const isOpen = isAccountModalOpen || isAuthModalOpen;
+
+  useEffect(() => {
+    if (isAuthModalOpen) {
+      setActiveTab('profile');
+      setAuthMode('login');
+    } else if (accountModalTab) {
+      setActiveTab(accountModalTab);
+    }
+  }, [isAuthModalOpen, accountModalTab]);
+
+  useEffect(() => {
+    if (user) {
+      setEditDisplayName(user.display_name || user.username);
+      setEditEmail(user.email || '');
+    }
+  }, [user]);
+
+  const createAdminApi = () => {
+    const tk = useAuthStore.getState().token;
+    return axios.create({
+      withCredentials: true,
+      baseURL: getApiBase(),
+      headers: tk ? { Authorization: `Bearer ${tk}` } : undefined,
+    });
+  };
+
+  // Load Admin Users
+  const loadAdminUsers = async () => {
+    setAdminLoading(true);
+    setAdminError(null);
+    try {
+      const api = createAdminApi();
+      const { data } = await api.get<User[]>('/admin/users');
+      setAdminUsers(data);
+    } catch (err: any) {
+      setAdminError(err.response?.data?.detail || 'Không thể tải danh sách tài khoản.');
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  // Load Projects
+  const loadProjects = async () => {
+    setProjectsLoading(true);
+    try {
+      const data = await getMyProjects();
+      setProjects(data);
+    } catch {
+      /* ignore */
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      if (activeTab === 'admin') {
+        void loadAdminUsers();
+      } else if (activeTab === 'projects') {
+        void loadProjects();
+      }
+    }
+  }, [isOpen, activeTab]);
+
+  if (!isOpen) return null;
+
+  const handleClose = () => {
+    closeAccountModal();
+    closeAuthModal();
+    setAuthError(null);
+    setProfileMsg(null);
+    setProjectMsg(null);
+  };
+
+  // Login handler
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      await login(ident, password);
+      setIdent('');
+      setPassword('');
+    } catch (err: any) {
+      setAuthError(err.response?.data?.detail || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+    }
+  };
+
+  // Quick 1-click Demo Login
+  const handleQuickLogin = async (loginIdent: string, loginPass: string) => {
+    setAuthError(null);
+    try {
+      await login(loginIdent, loginPass);
+    } catch (err: any) {
+      setAuthError(err.response?.data?.detail || 'Đăng nhập thất bại.');
+    }
+  };
+
+  // Register handler
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      await register(regUsername, regEmail, regPassword, regDisplayName);
+      setRegUsername('');
+      setRegEmail('');
+      setRegPassword('');
+      setRegDisplayName('');
+    } catch (err: any) {
+      setAuthError(err.response?.data?.detail || 'Đăng ký thất bại. Vui lòng kiểm tra lại.');
+    }
+  };
+
+  // Profile update handler
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileMsg(null);
+    setUpdatingProfile(true);
+    try {
+      await updateProfile({
+        displayName: editDisplayName,
+        email: editEmail,
+        password: editPassword || undefined,
+      });
+      setProfileMsg({ type: 'success', text: 'Cập nhật thông tin thành công!' });
+      setEditPassword('');
+    } catch (err: any) {
+      setProfileMsg({
+        type: 'error',
+        text: err.response?.data?.detail || 'Cập nhật thất bại.',
+      });
+    } finally {
+      setUpdatingProfile(false);
+    }
+  };
+
+  // Admin Create User
+  const handleAdminCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingUser(true);
+    setAdminError(null);
+    try {
+      const api = createAdminApi();
+      await api.post('/admin/users', {
+        username: newUsername,
+        email: newEmail,
+        password: newPassword,
+        display_name: newDisplayName || undefined,
+        role: newRole,
+        is_admin: newRole === 'admin',
+        is_active: true,
+        is_pro: true,
+        plan: 'pro',
+      });
+      setNewUsername('');
+      setNewEmail('');
+      setNewPassword('');
+      setNewDisplayName('');
+      setShowCreateUser(false);
+      await loadAdminUsers();
+    } catch (err: any) {
+      setAdminError(err.response?.data?.detail || 'Không thể tạo tài khoản mới.');
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
+  // Admin Toggle Admin
+  const handleToggleAdmin = async (targetUser: User) => {
+    try {
+      const api = createAdminApi();
+      await api.put(`/admin/users/${targetUser.id}`, {
+        is_admin: !targetUser.is_admin,
+        role: !targetUser.is_admin ? 'admin' : 'user',
+      });
+      await loadAdminUsers();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Không thể cập nhật quyền quản trị.');
+    }
+  };
+
+  // Admin Toggle Active
+  const handleToggleActive = async (targetUser: User) => {
+    try {
+      const api = createAdminApi();
+      await api.put(`/admin/users/${targetUser.id}`, {
+        is_active: !targetUser.is_active,
+      });
+      await loadAdminUsers();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Không thể cập nhật trạng thái.');
+    }
+  };
+
+  // Admin Reset Password
+  const handleAdminResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetPwdUserId || !newResetPassword) return;
+    try {
+      const api = createAdminApi();
+      await api.post(`/admin/users/${resetPwdUserId}/reset-password`, {
+        new_password: newResetPassword,
+      });
+      alert('Đã đặt lại mật khẩu thành công!');
+      setResetPwdUserId(null);
+      setNewResetPassword('');
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Đặt lại mật khẩu thất bại.');
+    }
+  };
+
+  // Admin Delete User
+  const handleDeleteUser = async (targetUser: User) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản "${targetUser.username}"?`)) return;
+    try {
+      const api = createAdminApi();
+      await api.delete(`/admin/users/${targetUser.id}`);
+      await loadAdminUsers();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Không thể xóa tài khoản này.');
+    }
+  };
+
+  // Cloud Save Current Project
+  const handleSaveCurrentProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProjectName.trim()) return;
+    setSavingProject(true);
+    setProjectMsg(null);
+    try {
+      const edState = useEditorStore.getState();
+      const simState = useSimulatorStore.getState();
+
+      const sketchFiles = edState.files.map((f) => ({
+        name: f.name,
+        content: f.content,
+      }));
+
+      const activeFile = edState.files.find((f) => f.id === edState.activeFileId);
+      const code = activeFile ? activeFile.content : edState.files[0]?.content || '';
+
+      const created = await createProject({
+        name: newProjectName.trim(),
+        description: newProjectDesc.trim() || undefined,
+        is_public: newProjectPublic,
+        visibility: newProjectPublic ? 'public' : 'private',
+        board_type: simState.boardType || 'arduino-uno',
+        code,
+        files: sketchFiles,
+        components_json: JSON.stringify(simState.components || []),
+        wires_json: JSON.stringify(simState.wires || []),
+      });
+
+      // Update current project in project store
+      useProjectStore.getState().setCurrentProject({
+        id: created.id,
+        slug: created.slug,
+        ownerUsername: created.owner_username,
+        isPublic: created.is_public,
+        visibility: created.visibility,
+      });
+
+      setProjectMsg({ type: 'success', text: `Đã lưu dự án "${created.name}" lên đám mây!` });
+      setNewProjectName('');
+      setNewProjectDesc('');
+      await loadProjects();
+    } catch (err: any) {
+      setProjectMsg({
+        type: 'error',
+        text: err.response?.data?.detail || 'Không thể lưu dự án lên mây.',
+      });
+    } finally {
+      setSavingProject(false);
+    }
+  };
+
+  // Delete project
+  const handleDeleteProject = async (p: ProjectResponse) => {
+    if (!confirm(`Xóa dự án "${p.name}"?`)) return;
+    try {
+      await deleteProject(p.id);
+      await loadProjects();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Không thể xóa dự án.');
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        animation: 'fadeIn 0.2s ease-out',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 860,
+          maxHeight: '90vh',
+          backgroundColor: '#18181b',
+          border: '1px solid #27272a',
+          borderRadius: 16,
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          color: '#f4f4f5',
+        }}
+      >
+        {/* Modal Header */}
+        <div
+          style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid #27272a',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'linear-gradient(180deg, #27272a 0%, #18181b 100%)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#000',
+              }}
+            >
+              <Crown size={20} strokeWidth={2.5} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span>Trung Tâm Tài Khoản & Quản Trị Hệ Thống</span>
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 800,
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+                    color: '#000',
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                  }}
+                >
+                  FULL PRO
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: '#a1a1aa' }}>
+                Hệ thống nhúng thực hành & mở khóa 100% tính năng Pro vĩnh viễn
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#a1a1aa',
+              cursor: 'pointer',
+              padding: 6,
+              borderRadius: 6,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Tab Buttons */}
+        <div
+          style={{
+            display: 'flex',
+            borderBottom: '1px solid #27272a',
+            background: '#121214',
+            padding: '0 16px',
+            gap: 8,
+          }}
+        >
+          <button
+            onClick={() => setActiveTab('profile')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 16px',
+              fontSize: 13,
+              fontWeight: 600,
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'profile' ? '2px solid #f59e0b' : '2px solid transparent',
+              color: activeTab === 'profile' ? '#fbbf24' : '#a1a1aa',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <UserIcon size={16} />
+            <span>👤 Tài Khoản Của Tôi</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('admin')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 16px',
+              fontSize: 13,
+              fontWeight: 600,
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'admin' ? '2px solid #f59e0b' : '2px solid transparent',
+              color: activeTab === 'admin' ? '#fbbf24' : '#a1a1aa',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Shield size={16} />
+            <span>🛡️ Quản Lý Tất Cả Account</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('projects')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 16px',
+              fontSize: 13,
+              fontWeight: 600,
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'projects' ? '2px solid #f59e0b' : '2px solid transparent',
+              color: activeTab === 'projects' ? '#fbbf24' : '#a1a1aa',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Cloud size={16} />
+            <span>☁️ Dự Án Đám Mây</span>
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div style={{ padding: 20, overflowY: 'auto', flex: 1 }}>
+          {/* ════════════════════════ TAB 1: PROFILE / AUTH ════════════════════════ */}
+          {activeTab === 'profile' && (
+            <div>
+              {!user ? (
+                /* Unauthenticated View: Quick Login / Form */
+                <div style={{ maxWidth: 520, margin: '0 auto' }}>
+                  {/* Quick 1-Click Demo Logins */}
+                  <div
+                    style={{
+                      background: 'rgba(245, 158, 11, 0.08)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      borderRadius: 12,
+                      padding: 16,
+                      marginBottom: 20,
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Crown size={16} />
+                      <span>Đăng Nhập 1-Chạm Nhanh (Demo Accounts)</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <button
+                        onClick={() => handleQuickLogin('admin', 'admin123')}
+                        style={{
+                          background: '#27272a',
+                          border: '1px solid #3f3f46',
+                          color: '#fff',
+                          padding: '10px 12px',
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                          gap: 2,
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, fontSize: 13, color: '#ef4444' }}>👑 Quản Trị Viên (Admin)</div>
+                        <div style={{ fontSize: 11, color: '#a1a1aa' }}>admin · admin123</div>
+                      </button>
+
+                      <button
+                        onClick={() => handleQuickLogin('hocsinh', 'hocsinh123')}
+                        style={{
+                          background: '#27272a',
+                          border: '1px solid #3f3f46',
+                          color: '#fff',
+                          padding: '10px 12px',
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                          gap: 2,
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, fontSize: 13, color: '#3b82f6' }}>🎓 Học Sinh Demo</div>
+                        <div style={{ fontSize: 11, color: '#a1a1aa' }}>hocsinh · hocsinh123</div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Auth Mode Toggle */}
+                  <div style={{ display: 'flex', borderBottom: '1px solid #27272a', marginBottom: 16 }}>
+                    <button
+                      onClick={() => setAuthMode('login')}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        background: 'none',
+                        border: 'none',
+                        borderBottom: authMode === 'login' ? '2px solid #3b82f6' : 'none',
+                        color: authMode === 'login' ? '#60a5fa' : '#a1a1aa',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Đăng Nhập
+                    </button>
+                    <button
+                      onClick={() => setAuthMode('register')}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        background: 'none',
+                        border: 'none',
+                        borderBottom: authMode === 'register' ? '2px solid #3b82f6' : 'none',
+                        color: authMode === 'register' ? '#60a5fa' : '#a1a1aa',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Tạo Tài Khoản Mới
+                    </button>
+                  </div>
+
+                  {authError && (
+                    <div
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: 8,
+                        padding: '10px 14px',
+                        color: '#f87171',
+                        fontSize: 13,
+                        marginBottom: 16,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                      }}
+                    >
+                      <AlertCircle size={16} />
+                      <span>{authError}</span>
+                    </div>
+                  )}
+
+                  {authMode === 'login' ? (
+                    <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
+                          Email hoặc Tên đăng nhập
+                        </label>
+                        <input
+                          type="text"
+                          value={ident}
+                          onChange={(e) => setIdent(e.target.value)}
+                          placeholder="admin / hocsinh / email..."
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            background: '#27272a',
+                            border: '1px solid #3f3f46',
+                            borderRadius: 8,
+                            color: '#fff',
+                            fontSize: 14,
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
+                          Mật khẩu
+                        </label>
+                        <input
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            background: '#27272a',
+                            border: '1px solid #3f3f46',
+                            borderRadius: 8,
+                            color: '#fff',
+                            fontSize: 14,
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={authLoading}
+                        style={{
+                          marginTop: 6,
+                          padding: '12px',
+                          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                          border: 'none',
+                          borderRadius: 8,
+                          color: '#000',
+                          fontWeight: 700,
+                          fontSize: 14,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        {authLoading ? <RefreshCw size={16} className="animate-spin" /> : <Crown size={16} />}
+                        <span>Đăng Nhập Ngay</span>
+                      </button>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
+                          Tên hiển thị (Họ và tên)
+                        </label>
+                        <input
+                          type="text"
+                          value={regDisplayName}
+                          onChange={(e) => setRegDisplayName(e.target.value)}
+                          placeholder="Nguyễn Văn A"
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            background: '#27272a',
+                            border: '1px solid #3f3f46',
+                            borderRadius: 8,
+                            color: '#fff',
+                            fontSize: 14,
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
+                          Username (viết liền không dấu)
+                        </label>
+                        <input
+                          type="text"
+                          value={regUsername}
+                          onChange={(e) => setRegUsername(e.target.value)}
+                          placeholder="nguyenvana"
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            background: '#27272a',
+                            border: '1px solid #3f3f46',
+                            borderRadius: 8,
+                            color: '#fff',
+                            fontSize: 14,
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          value={regEmail}
+                          onChange={(e) => setRegEmail(e.target.value)}
+                          placeholder="vana@example.com"
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            background: '#27272a',
+                            border: '1px solid #3f3f46',
+                            borderRadius: 8,
+                            color: '#fff',
+                            fontSize: 14,
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
+                          Mật khẩu (tối thiểu 8 ký tự)
+                        </label>
+                        <input
+                          type="password"
+                          value={regPassword}
+                          onChange={(e) => setRegPassword(e.target.value)}
+                          placeholder="••••••••"
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            background: '#27272a',
+                            border: '1px solid #3f3f46',
+                            borderRadius: 8,
+                            color: '#fff',
+                            fontSize: 14,
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={authLoading}
+                        style={{
+                          marginTop: 6,
+                          padding: '12px',
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          border: 'none',
+                          borderRadius: 8,
+                          color: '#fff',
+                          fontWeight: 700,
+                          fontSize: 14,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        {authLoading ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />}
+                        <span>Đăng Ký & Tự Động Kích Hoạt Full Pro</span>
+                      </button>
+                    </form>
+                  )}
+                </div>
+              ) : (
+                /* Authenticated Profile View */
+                <div>
+                  {/* Pro Status Banner */}
+                  <div
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.25) 100%)',
+                      border: '1px solid rgba(245, 158, 11, 0.5)',
+                      borderRadius: 12,
+                      padding: 18,
+                      marginBottom: 20,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 10,
+                            background: '#f59e0b',
+                            color: '#000',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Crown size={22} strokeWidth={3} />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: 16, color: '#fbbf24' }}>
+                            👑 GÓI BẢN QUYỀN: VELXIO FULL PRO (VĨNH VIỄN)
+                          </div>
+                          <div style={{ fontSize: 12, color: '#d4d4d8' }}>
+                            Thời hạn: Vô thời hạn (2099-12-31) · Đã mở khóa 100% tài nguyên
+                          </div>
+                        </div>
+                      </div>
+
+                      <span
+                        style={{
+                          background: '#10b981',
+                          color: '#fff',
+                          fontWeight: 700,
+                          fontSize: 11,
+                          padding: '4px 10px',
+                          borderRadius: 20,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <Check size={12} strokeWidth={3} /> ĐANG HOẠT ĐỘNG
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: 12, color: '#e4e4e7' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> 19+ Bo mạch STM32 QEMU, Pi Linux & ESP32
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> Hàng đợi biên dịch VIP ưu tiên cao nhất
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> Tải file dữ liệu / âm thanh lên MicroSD ảo
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> Nạp trực tiếp bo mạch thật qua WebSerial
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> Không giới hạn lưu trữ dự án Đám mây
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> Không quảng cáo & Toàn quyền IoT Gateway
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Profile Edit Form */}
+                  <div
+                    style={{
+                      background: '#1f1f23',
+                      border: '1px solid #27272a',
+                      borderRadius: 12,
+                      padding: 20,
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14, color: '#fff' }}>
+                      Chỉnh Sửa Thông Tin Cá Nhân
+                    </div>
+
+                    {profileMsg && (
+                      <div
+                        style={{
+                          background: profileMsg.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                          border: `1px solid ${profileMsg.type === 'success' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+                          color: profileMsg.type === 'success' ? '#34d399' : '#f87171',
+                          padding: '10px 14px',
+                          borderRadius: 8,
+                          fontSize: 13,
+                          marginBottom: 16,
+                        }}
+                      >
+                        {profileMsg.text}
+                      </div>
+                    )}
+
+                    <form onSubmit={handleProfileUpdate} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#a1a1aa', marginBottom: 6 }}>
+                          Tên hiển thị
+                        </label>
+                        <input
+                          type="text"
+                          value={editDisplayName}
+                          onChange={(e) => setEditDisplayName(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '9px 12px',
+                            background: '#27272a',
+                            border: '1px solid #3f3f46',
+                            borderRadius: 8,
+                            color: '#fff',
+                            fontSize: 13,
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#a1a1aa', marginBottom: 6 }}>
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          value={editEmail}
+                          onChange={(e) => setEditEmail(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '9px 12px',
+                            background: '#27272a',
+                            border: '1px solid #3f3f46',
+                            borderRadius: 8,
+                            color: '#fff',
+                            fontSize: 13,
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#a1a1aa', marginBottom: 6 }}>
+                          Username (Định danh)
+                        </label>
+                        <input
+                          type="text"
+                          value={user.username}
+                          disabled
+                          style={{
+                            width: '100%',
+                            padding: '9px 12px',
+                            background: '#18181b',
+                            border: '1px solid #27272a',
+                            borderRadius: 8,
+                            color: '#71717a',
+                            fontSize: 13,
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#a1a1aa', marginBottom: 6 }}>
+                          Đổi mật khẩu mới (để trống nếu không đổi)
+                        </label>
+                        <input
+                          type="password"
+                          value={editPassword}
+                          onChange={(e) => setEditPassword(e.target.value)}
+                          placeholder="Mật khẩu mới..."
+                          style={{
+                            width: '100%',
+                            padding: '9px 12px',
+                            background: '#27272a',
+                            border: '1px solid #3f3f46',
+                            borderRadius: 8,
+                            color: '#fff',
+                            fontSize: 13,
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                        <button
+                          type="button"
+                          onClick={() => logout()}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            background: 'rgba(239, 68, 68, 0.15)',
+                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                            color: '#f87171',
+                            padding: '8px 14px',
+                            borderRadius: 8,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <LogOut size={16} />
+                          <span>Đăng Xuất</span>
+                        </button>
+
+                        <button
+                          type="submit"
+                          disabled={updatingProfile}
+                          style={{
+                            background: '#3b82f6',
+                            border: 'none',
+                            color: '#fff',
+                            padding: '8px 18px',
+                            borderRadius: 8,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          {updatingProfile ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />}
+                          <span>Lưu Thay Đổi</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ════════════════════════ TAB 2: ADMIN MANAGEMENT ════════════════════════ */}
+          {activeTab === 'admin' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>
+                    Quản Trị Tài Khoản & Phân Quyền Hệ Thống
+                  </div>
+                  <div style={{ fontSize: 12, color: '#a1a1aa' }}>
+                    Tất cả các tài khoản tạo ra đều tự động mở khóa Full Pro vĩnh viễn
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={loadAdminUsers}
+                    style={{
+                      background: '#27272a',
+                      border: '1px solid #3f3f46',
+                      color: '#d4d4d8',
+                      padding: '7px 12px',
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <RefreshCw size={14} className={adminLoading ? 'animate-spin' : ''} />
+                    <span>Làm Mới</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowCreateUser(!showCreateUser)}
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      border: 'none',
+                      color: '#fff',
+                      padding: '7px 14px',
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Plus size={14} />
+                    <span>+ Tạo Tài Khoản Mới</span>
+                  </button>
+                </div>
+              </div>
+
+              {adminError && (
+                <div
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#f87171',
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    marginBottom: 16,
+                  }}
+                >
+                  {adminError}
+                </div>
+              )}
+
+              {/* Create User Form Drawer */}
+              {showCreateUser && (
+                <div
+                  style={{
+                    background: '#1f1f23',
+                    border: '1px solid #3b82f6',
+                    borderRadius: 12,
+                    padding: 16,
+                    marginBottom: 16,
+                  }}
+                >
+                  <div style={{ fontWeight: 700, fontSize: 14, color: '#60a5fa', marginBottom: 12 }}>
+                    Tạo Tài Khoản Người Dùng / Quản Trị Viên Mới
+                  </div>
+                  <form onSubmit={handleAdminCreateUser} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#a1a1aa', marginBottom: 4 }}>
+                        Tên hiển thị
+                      </label>
+                      <input
+                        type="text"
+                        value={newDisplayName}
+                        onChange={(e) => setNewDisplayName(e.target.value)}
+                        placeholder="Nguyễn Văn B"
+                        style={{
+                          width: '100%',
+                          padding: '8px 10px',
+                          background: '#27272a',
+                          border: '1px solid #3f3f46',
+                          borderRadius: 6,
+                          color: '#fff',
+                          fontSize: 13,
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#a1a1aa', marginBottom: 4 }}>
+                        Username *
+                      </label>
+                      <input
+                        type="text"
+                        value={newUsername}
+                        onChange={(e) => setNewUsername(e.target.value)}
+                        placeholder="nguyenvanb"
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '8px 10px',
+                          background: '#27272a',
+                          border: '1px solid #3f3f46',
+                          borderRadius: 6,
+                          color: '#fff',
+                          fontSize: 13,
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#a1a1aa', marginBottom: 4 }}>
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        value={newEmail}
+                        onChange={(e) => setNewEmail(e.target.value)}
+                        placeholder="vanb@example.com"
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '8px 10px',
+                          background: '#27272a',
+                          border: '1px solid #3f3f46',
+                          borderRadius: 6,
+                          color: '#fff',
+                          fontSize: 13,
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#a1a1aa', marginBottom: 4 }}>
+                        Mật khẩu *
+                      </label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Tối thiểu 6 ký tự"
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '8px 10px',
+                          background: '#27272a',
+                          border: '1px solid #3f3f46',
+                          borderRadius: 6,
+                          color: '#fff',
+                          fontSize: 13,
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#a1a1aa', marginBottom: 4 }}>
+                        Vai trò (Role)
+                      </label>
+                      <select
+                        value={newRole}
+                        onChange={(e) => setNewRole(e.target.value as any)}
+                        style={{
+                          width: '100%',
+                          padding: '8px 10px',
+                          background: '#27272a',
+                          border: '1px solid #3f3f46',
+                          borderRadius: 6,
+                          color: '#fff',
+                          fontSize: 13,
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                        <option value="user">Học viên (User)</option>
+                        <option value="admin">Quản trị viên (Admin)</option>
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+                      <button
+                        type="submit"
+                        disabled={creatingUser}
+                        style={{
+                          flex: 1,
+                          padding: '9px',
+                          background: '#10b981',
+                          border: 'none',
+                          borderRadius: 6,
+                          color: '#fff',
+                          fontWeight: 700,
+                          fontSize: 13,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {creatingUser ? 'Đang tạo...' : 'Tạo Tài Khoản (Full Pro)'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowCreateUser(false)}
+                        style={{
+                          padding: '9px 12px',
+                          background: '#3f3f46',
+                          border: 'none',
+                          borderRadius: 6,
+                          color: '#fff',
+                          fontSize: 13,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Hủy
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Password Reset Modal Prompt */}
+              {resetPwdUserId && (
+                <div
+                  style={{
+                    background: '#27272a',
+                    border: '1px solid #f59e0b',
+                    borderRadius: 10,
+                    padding: 14,
+                    marginBottom: 16,
+                  }}
+                >
+                  <form onSubmit={handleAdminResetPassword} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fbbf24', whiteSpace: 'nowrap' }}>
+                      🔑 Đặt lại mật khẩu mới:
+                    </div>
+                    <input
+                      type="password"
+                      value={newResetPassword}
+                      onChange={(e) => setNewResetPassword(e.target.value)}
+                      placeholder="Nhập mật khẩu mới..."
+                      required
+                      style={{
+                        flex: 1,
+                        padding: '7px 10px',
+                        background: '#18181b',
+                        border: '1px solid #3f3f46',
+                        borderRadius: 6,
+                        color: '#fff',
+                        fontSize: 13,
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      style={{
+                        padding: '7px 14px',
+                        background: '#f59e0b',
+                        border: 'none',
+                        borderRadius: 6,
+                        color: '#000',
+                        fontWeight: 700,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cập Nhật
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setResetPwdUserId(null)}
+                      style={{
+                        padding: '7px 10px',
+                        background: '#3f3f46',
+                        border: 'none',
+                        borderRadius: 6,
+                        color: '#fff',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Hủy
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {/* Users Table */}
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #3f3f46', color: '#a1a1aa' }}>
+                      <th style={{ padding: '8px 10px' }}>Tài Khoản</th>
+                      <th style={{ padding: '8px 10px' }}>Email</th>
+                      <th style={{ padding: '8px 10px' }}>Vai Trò</th>
+                      <th style={{ padding: '8px 10px' }}>Gói Cước</th>
+                      <th style={{ padding: '8px 10px' }}>Trạng Thái</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }}>Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminUsers.map((u) => (
+                      <tr key={u.id} style={{ borderBottom: '1px solid #27272a' }}>
+                        <td style={{ padding: '10px 10px' }}>
+                          <div style={{ fontWeight: 600, color: '#fff' }}>{u.display_name || u.username}</div>
+                          <div style={{ fontSize: 11, color: '#71717a' }}>@{u.username}</div>
+                        </td>
+                        <td style={{ padding: '10px 10px', color: '#d4d4d8' }}>{u.email}</td>
+                        <td style={{ padding: '10px 10px' }}>
+                          <span
+                            style={{
+                              background: u.is_admin ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                              color: u.is_admin ? '#f87171' : '#60a5fa',
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                              fontWeight: 700,
+                              fontSize: 11,
+                            }}
+                          >
+                            {u.is_admin ? 'Quản Trị Viên' : 'Học Viên'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 10px' }}>
+                          <span
+                            style={{
+                              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                              color: '#000',
+                              fontWeight: 800,
+                              fontSize: 10,
+                              padding: '2px 6px',
+                              borderRadius: 4,
+                            }}
+                          >
+                            👑 FULL PRO
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 10px' }}>
+                          <button
+                            onClick={() => handleToggleActive(u)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: u.is_active ? '#34d399' : '#f87171',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              padding: 0,
+                            }}
+                            title="Click để đổi trạng thái"
+                          >
+                            {u.is_active ? '● Hoạt động' : '○ Bị khóa'}
+                          </button>
+                        </td>
+                        <td style={{ padding: '10px 10px', textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', gap: 6 }}>
+                            <button
+                              onClick={() => handleToggleAdmin(u)}
+                              title={u.is_admin ? 'Hạ xuống học viên' : 'Nâng lên Admin'}
+                              style={{
+                                background: '#27272a',
+                                border: '1px solid #3f3f46',
+                                color: '#d4d4d8',
+                                padding: '4px 8px',
+                                borderRadius: 4,
+                                cursor: 'pointer',
+                                fontSize: 11,
+                              }}
+                            >
+                              {u.is_admin ? 'Hạ quyền' : 'Lên Admin'}
+                            </button>
+
+                            <button
+                              onClick={() => setResetPwdUserId(u.id)}
+                              title="Đặt lại mật khẩu"
+                              style={{
+                                background: '#27272a',
+                                border: '1px solid #3f3f46',
+                                color: '#fbbf24',
+                                padding: '4px 8px',
+                                borderRadius: 4,
+                                cursor: 'pointer',
+                                fontSize: 11,
+                              }}
+                            >
+                              <Key size={12} />
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteUser(u)}
+                              title="Xóa tài khoản"
+                              style={{
+                                background: 'rgba(239, 68, 68, 0.15)',
+                                border: '1px solid rgba(239, 68, 68, 0.4)',
+                                color: '#f87171',
+                                padding: '4px 8px',
+                                borderRadius: 4,
+                                cursor: 'pointer',
+                                fontSize: 11,
+                              }}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════ TAB 3: CLOUD PROJECTS ════════════════════════ */}
+          {activeTab === 'projects' && (
+            <div>
+              {/* Save current project block */}
+              <div
+                style={{
+                  background: '#1f1f23',
+                  border: '1px solid #27272a',
+                  borderRadius: 12,
+                  padding: 16,
+                  marginBottom: 20,
+                }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#fbbf24', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Cloud size={16} />
+                  <span>Lưu Sơ Đồ & Code Hiện Tại Lên Đám Mây</span>
+                </div>
+
+                {projectMsg && (
+                  <div
+                    style={{
+                      background: projectMsg.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      border: `1px solid ${projectMsg.type === 'success' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+                      color: projectMsg.type === 'success' ? '#34d399' : '#f87171',
+                      padding: '8px 12px',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      marginBottom: 12,
+                    }}
+                  >
+                    {projectMsg.text}
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveCurrentProject} style={{ display: 'grid', gridTemplateColumns: '2fr 3fr auto 1fr', gap: 10 }}>
+                  <input
+                    type="text"
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    placeholder="Tên dự án (VD: Đèn Giao Thông IoT)"
+                    required
+                    style={{
+                      padding: '8px 10px',
+                      background: '#27272a',
+                      border: '1px solid #3f3f46',
+                      borderRadius: 6,
+                      color: '#fff',
+                      fontSize: 13,
+                    }}
+                  />
+
+                  <input
+                    type="text"
+                    value={newProjectDesc}
+                    onChange={(e) => setNewProjectDesc(e.target.value)}
+                    placeholder="Mô tả tóm tắt tính năng..."
+                    style={{
+                      padding: '8px 10px',
+                      background: '#27272a',
+                      border: '1px solid #3f3f46',
+                      borderRadius: 6,
+                      color: '#fff',
+                      fontSize: 13,
+                    }}
+                  />
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#d4d4d8', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={newProjectPublic}
+                      onChange={(e) => setNewProjectPublic(e.target.checked)}
+                    />
+                    <span>Công khai</span>
+                  </label>
+
+                  <button
+                    type="submit"
+                    disabled={savingProject}
+                    style={{
+                      padding: '8px 14px',
+                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                      border: 'none',
+                      borderRadius: 6,
+                      color: '#000',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    {savingProject ? <RefreshCw size={14} className="animate-spin" /> : <Cloud size={14} />}
+                    <span>Lưu Mây</span>
+                  </button>
+                </form>
+              </div>
+
+              {/* Saved projects list */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: '#fff' }}>
+                    Danh Sách Dự Án Đã Lưu ({projects.length})
+                  </div>
+                  <button
+                    onClick={loadProjects}
+                    style={{
+                      background: '#27272a',
+                      border: '1px solid #3f3f46',
+                      color: '#d4d4d8',
+                      padding: '5px 10px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Làm mới
+                  </button>
+                </div>
+
+                {projectsLoading ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: '#a1a1aa' }}>Đang tải dự án...</div>
+                ) : projects.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 30, color: '#71717a', fontSize: 13 }}>
+                    Chưa có dự án nào được lưu. Hãy bấm nút "Lưu Mây" ở trên để lưu mạch của bạn!
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
+                    {projects.map((p) => (
+                      <div
+                        key={p.id}
+                        style={{
+                          background: '#1f1f23',
+                          border: '1px solid #27272a',
+                          borderRadius: 8,
+                          padding: '12px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 14, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span>{p.name}</span>
+                            <span
+                              style={{
+                                fontSize: 10,
+                                background: '#3f3f46',
+                                color: '#d4d4d8',
+                                padding: '1px 6px',
+                                borderRadius: 4,
+                              }}
+                            >
+                              {p.board_type}
+                            </span>
+                          </div>
+                          {p.description && (
+                            <div style={{ fontSize: 12, color: '#a1a1aa', marginTop: 2 }}>
+                              {p.description}
+                            </div>
+                          )}
+                          <div style={{ fontSize: 11, color: '#71717a', marginTop: 4 }}>
+                            Cập nhật: {new Date(p.updated_at).toLocaleString('vi-VN')} · Chủ sở hữu: @{p.owner_username}
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <a
+                            href={`${getApiBase()}/pro/projects/${p.id}/bom.csv`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              background: '#27272a',
+                              border: '1px solid #3f3f46',
+                              color: '#d4d4d8',
+                              padding: '6px 10px',
+                              borderRadius: 6,
+                              fontSize: 11,
+                              textDecoration: 'none',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <Download size={12} />
+                            <span>BOM CSV</span>
+                          </a>
+
+                          <button
+                            onClick={() => handleDeleteProject(p)}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.15)',
+                              border: '1px solid rgba(239, 68, 68, 0.4)',
+                              color: '#f87171',
+                              padding: '6px 10px',
+                              borderRadius: 6,
+                              fontSize: 11,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};

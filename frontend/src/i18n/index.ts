@@ -28,6 +28,15 @@ import enSeo from "./locales/en/seo.json";
 import enSeo2 from "./locales/en/seo2.json";
 import enSeo3 from "./locales/en/seo3.json";
 import enSeo4 from "./locales/en/seo4.json";
+import viCommon from "./locales/vi/common.json";
+import viCommon2 from "./locales/vi/common2.json";
+import viReleases from "./locales/vi/releases.json";
+import viDocs from "./locales/vi/docs.json";
+import viDocs2 from "./locales/vi/docs2.json";
+import viSeo from "./locales/vi/seo.json";
+import viSeo2 from "./locales/vi/seo2.json";
+import viSeo3 from "./locales/vi/seo3.json";
+import viSeo4 from "./locales/vi/seo4.json";
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "./config";
 
 /**
@@ -77,6 +86,18 @@ void i18n
   .use(initReactI18next)
   .init({
     resources: {
+      vi: {
+        common: {
+          ...deepMerge(deepMerge(viCommon, viCommon2), viReleases),
+          seo: {
+            ...viSeo.seo,
+            ...viSeo2.seo,
+            ...viSeo3.seo,
+            ...viSeo4.seo,
+          },
+          docs: { ...viDocs.docs, ...viDocs2.docs },
+        },
+      },
       en: {
         common: {
           ...deepMerge(deepMerge(enCommon, enCommon2), enReleases),
@@ -90,16 +111,8 @@ void i18n
         },
       },
     },
-    // Start at the default locale (its resources are inlined above). The
-    // active locale is then driven from the URL by LocaleSync after mount,
-    // which lazy-loads the matching bundle and performs a real
-    // changeLanguage — the event that makes subscribed components re-render.
-    // Seeding `lng` to the URL locale here instead left direct loads of a
-    // non-default URL stuck on the English fallback, because LocaleSync's
-    // `i18n.language !== target` guard was already satisfied so the bundle
-    // was never fetched.
     lng: DEFAULT_LOCALE,
-    fallbackLng: DEFAULT_LOCALE,
+    fallbackLng: "en",
     supportedLngs: SUPPORTED_LANGS,
     // Our locale codes are lowercase with a lowercase region ("zh-cn",
     // "pt-br"). i18next's default code formatting rewrites those to

@@ -77,11 +77,11 @@ export function readStoredMode(): ThemeMode {
   const blog = readKey(MIRROR_BLOG);
   if (blog === 'dark' || blog === 'light') return blog;
 
-  return 'dark';
+  return 'light';
 }
 
 export function systemPrefers(): ResolvedTheme {
-  if (typeof window === 'undefined' || !window.matchMedia) return 'dark';
+  if (typeof window === 'undefined' || !window.matchMedia) return 'light';
   return window.matchMedia(DARK_QUERY).matches ? 'dark' : 'light';
 }
 
@@ -119,7 +119,7 @@ function paint(resolved: ResolvedTheme): void {
 
   // The address-bar tint on mobile. Matches --color-bg-canvas per theme.
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', resolved === 'light' ? '#f5f5f7' : '#0a0a0c');
+  if (meta) meta.setAttribute('content', resolved === 'light' ? '#f8f1e6' : '#0a0a0c');
 }
 
 // ── Subscribable state ──────────────────────────────────────────────────
@@ -127,8 +127,8 @@ function paint(resolved: ResolvedTheme): void {
 // theme before React exists, so the source of truth is the DOM + storage, and
 // React only needs to be told when it changes (useSyncExternalStore).
 
-let currentMode: ThemeMode = 'dark';
-let currentResolved: ResolvedTheme = 'dark';
+let currentMode: ThemeMode = 'light';
+let currentResolved: ResolvedTheme = 'light';
 const listeners = new Set<() => void>();
 
 function emit(): void {

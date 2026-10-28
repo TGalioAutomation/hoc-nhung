@@ -1,0 +1,27 @@
+{
+  "name": "esp32-kids-to-pro",
+  "version": "1.0.0",
+  "description": "Age-Tiered (5-20) ESP32 & Embedded Systems Learning WebApp",
+  "type": "module",
+  "main": "src/engine.js",
+  "scripts": {
+    "test": "node --test \"tests/*.test.js\"",
+    "test:spec": "node --test tests/spec.test.js",
+    "test:lessons": "node --test tests/lessons.test.js",
+    "test:mutants": "node clean-room/verify-mutants.mjs",
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "esp32",
+    "education",
+    "clean-room",
+    "embedded",
+    "stem",
+    "kids-to-pro"
+  ],
+  "author": "Clean-Room Implementation Team",
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.186.1"
+  }
+}

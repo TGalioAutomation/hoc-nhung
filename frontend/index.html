@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,7 +8,7 @@
          PRIMARY SEO
          Replace https://velxio.dev with your real domain
     ═══════════════════════════════════════════════ -->
-    <title>Velxio — Free Online Circuit & Arduino Simulator | SPICE · ESP32 · RP2040 · ATtiny85 · Custom Chips</title>
+    <title>Velxio Kids-to-Pro — Phòng Thí Nghiệm Nhúng & Vi Điều Khiển (5–20 Tuổi) | ESP32 · Arduino · RP2040 · SPICE</title>
     <meta name="description" content="Velxio is a free, open-source circuit and microcontroller simulator running in your browser. Real-time SPICE analog simulation (ngspice-WASM) wired to 19 boards: Arduino Uno/Nano/Mega/ATtiny85 (AVR8), ESP32 / ESP32-S3 (Xtensa QEMU), ESP32-C3 / CH32V003 (RISC-V), Raspberry Pi Pico (RP2040), Raspberry Pi 3 (Linux ARM). 100+ components, custom chips in C/Rust, oscilloscope, voltmeter, ammeter — no cloud, no account." />
     <meta name="keywords" content="circuit simulator, online circuit simulator, free circuit simulator, electronics simulator, spice simulator online, ngspice browser, analog circuit simulator, arduino simulator, arduino emulator, arduino simulator free, avr8 emulator, avr simulator, atmega328p simulator, atmega2560 simulator, attiny85 simulator, attiny85 emulator, arduino uno simulator, arduino mega simulator, arduino nano simulator, custom chip simulator, custom chip arduino, rp2040 emulator, raspberry pi pico simulator, esp32 emulator, esp32 simulator, esp32-c3 simulator, esp32-s3 emulator, risc-v simulator, ch32v003, raspberry pi 3 emulator, wokwi alternative, falstad alternative, tinkercad alternative, arduino ide browser, arduino online, online breadboard, virtual breadboard, oscilloscope simulator, op-amp simulator, transistor simulator, simulador arduino, simulador de circuitos, simulador electronico, velxio" />
     <meta name="author" content="David Montero Crespo" />
@@ -281,7 +281,7 @@
           if (sl === 'auto') mode = 'system';
           else if (sl === 'dark' || sl === 'light') mode = sl;
           else if (blog === 'dark' || blog === 'light') mode = blog;
-          else mode = 'dark';
+          else mode = 'light';
         }
         var resolved = mode;
         if (mode === 'system') {
@@ -293,9 +293,9 @@
         document.documentElement.setAttribute('data-theme', resolved);
         document.documentElement.style.colorScheme = resolved;
         var m = document.querySelector('meta[name="theme-color"]');
-        if (m) m.setAttribute('content', resolved === 'light' ? '#f5f5f7' : '#0a0a0c');
+        if (m) m.setAttribute('content', resolved === 'light' ? '#f8f1e6' : '#0a0a0c');
       } catch (e) {
-        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.setAttribute('data-theme', 'light');
       }
     })();
   </script>
@@ -304,7 +304,7 @@
        Crawlers ignore visibility:hidden and still index the text. */
     #root-seo { visibility: hidden; position: absolute; pointer-events: none; }
   </style>
-  <body style="margin:0;background:var(--color-bg-canvas,#0a0a0c);">
+  <body style="margin:0;background:var(--color-bg-canvas,#f8f1e6);">
     <!--
       Desktop-only splash. Sidecar boot + Monaco hydration take 3-8s
       on a cold launch; without this the user stares at a black window.

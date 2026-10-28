@@ -22,6 +22,7 @@ import { infraredExamples } from './examples-infrared';
 import { esp32MqttExamples } from './examples-esp32-mqtt';
 import { esp32s3TftExamples } from './examples-esp32s3-tft';
 import { jsemuChipExamples } from './examples-jsemu-chips';
+import { localizeExampleProjectVi } from './examplesVi';
 import eeprom24c01C from '../components/customChips/examples/eeprom-24c01.c?raw';
 import eeprom24c01J from '../components/customChips/examples/eeprom-24c01.chip.json?raw';
 
@@ -11835,7 +11836,7 @@ export const exampleProjects: ExampleProject[] = [
   ...esp32MqttExamples,
   ...esp32s3TftExamples,
   ...jsemuChipExamples,
-];
+].map(localizeExampleProjectVi);
 
 // Get examples by category
 export function getExamplesByCategory(category: ExampleProject['category']): ExampleProject[] {
@@ -11857,7 +11858,9 @@ const proExamplesListeners = new Set<() => void>();
 
 export function registerProExamples(examples: ExampleProject[]): void {
   for (const ex of examples) {
-    if (!exampleProjects.some((e) => e.id === ex.id)) exampleProjects.push(ex);
+    if (!exampleProjects.some((e) => e.id === ex.id)) {
+      exampleProjects.push(localizeExampleProjectVi(ex));
+    }
   }
   // Overlay registration can land AFTER a direct-URL page render resolved the
   // array (the @pro import is dynamic) — notify subscribers so example pages

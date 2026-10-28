@@ -28,6 +28,7 @@ import { useThemeMode } from '../../hooks/useTheme';
 import type { ThemeMode } from '../../lib/theme';
 import { LOCALES, LOCALE_META, type Locale } from '../../i18n/config';
 import { getLocaleFromPath, switchLocale } from '../../i18n/path';
+import { useAuthStore } from '../../store/useAuthStore';
 import {
   hasEditorCommand,
   runEditorCommand,
@@ -381,17 +382,55 @@ export const EditorMenuBar: React.FC = () => {
               {accountItems.some(
                 (item) => item.kind === 'command' && hasEditorCommand(item.id),
               ) && <div className="emb-separator" />}
-              {/* Pro account items (PRO badge, Subscribe / Manage
-                  subscription, licenses, history, replays, Privacy) mount
-                  here via the SAME user-menu slot the bottom-left account
-                  dropdown uses — one overlay renderer, two hosts. Clicking
-                  any of them closes this menu (they navigate or open their
-                  own modal). Empty in OSS builds. */}
+              {/* Pro account items */}
               <div
                 data-velxio-slot="user-menu"
                 style={{ display: 'contents' }}
                 onClick={() => setOpen(null)}
-              />
+              >
+                <button
+                  role="menuitem"
+                  className="emb-item"
+                  onClick={() => {
+                    setOpen(null);
+                    useAuthStore.getState().openAccountModal('profile');
+                  }}
+                >
+                  <span>👑 Quản Lý Tài Khoản (Full Pro)</span>
+                </button>
+                <button
+                  role="menuitem"
+                  className="emb-item"
+                  onClick={() => {
+                    setOpen(null);
+                    useAuthStore.getState().openAccountModal('admin');
+                  }}
+                >
+                  <span>🛡️ Quản Lý Tất Cả Account (Admin)</span>
+                </button>
+                <button
+                  role="menuitem"
+                  className="emb-item"
+                  onClick={() => {
+                    setOpen(null);
+                    useAuthStore.getState().openAccountModal('projects');
+                  }}
+                >
+                  <span>☁️ Dự Án Đã Lưu (Cloud)</span>
+                </button>
+                {useAuthStore.getState().user && (
+                  <button
+                    role="menuitem"
+                    className="emb-item"
+                    onClick={() => {
+                      setOpen(null);
+                      void useAuthStore.getState().logout();
+                    }}
+                  >
+                    <span>🚪 Đăng Xuất</span>
+                  </button>
+                )}
+              </div>
               <div className="emb-separator" />
               {/* Language moved in here from its own top-level menu — the
                   menubar was one trigger too wide once the AI chat docks. */}

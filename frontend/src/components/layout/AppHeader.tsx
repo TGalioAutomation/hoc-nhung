@@ -5,10 +5,12 @@ import { useProjectStore } from '../../store/useProjectStore';
 import { ShareModal } from './ShareModal';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './ThemeToggle';
+import { GamificationHeaderPill } from '../gamification/GamificationHeaderPill';
 import { useLocalizedHref, useCurrentLocale } from '../../i18n/useLocalizedNavigate';
 import { blogUrlFor } from '../../i18n/path';
 import { trackVisitGitHub, trackVisitDiscord } from '../../utils/analytics';
 import { applyStripLayout, STRIP_BELOW_CLASS } from './headerStripFit';
+import { HeaderAccountButton } from '../account/HeaderAccountButton';
 import './LanguageSwitcher.css';
 
 const GITHUB_URL = 'https://github.com/davidmonterocrespo24/velxio';
@@ -260,6 +262,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ editorMenu, editorToolbar 
             the single-row layout. */}
         {!editorToolbar && (
         <div className="header-right">
+          <GamificationHeaderPill />
           {/* Hidden on the marketing pages, which pin themselves to dark
               (pro DarkSurface) — offering a switch that visibly does nothing
               would be worse than not offering one. */}
@@ -304,13 +307,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ editorMenu, editorToolbar 
             </button>
           )}
 
-          {/* Auth UI lives in the pro overlay — sign-in/sign-up buttons
-              when anonymous, user dropdown when logged in. The overlay's
-              mountPro() portals its HeaderAuth component into this slot
-              via mountIntoSlot('header-auth'). In OSS without the
-              overlay this slot stays empty, which is correct because the
-              OSS image has no auth backend either. */}
-          <div data-velxio-slot="header-auth" style={{ display: 'contents' }} />
+          {/* Auth UI slot */}
+          <div data-velxio-slot="header-auth" style={{ display: 'contents' }}>
+            <HeaderAccountButton />
+          </div>
 
           {/* Mobile hamburger — useless in desktop where the nav it
               would expand is itself hidden, and in the editor variant,

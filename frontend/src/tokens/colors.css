@@ -238,69 +238,56 @@
  */
 :root[data-theme='light'],
 [data-theme='light'] {
-  /* Workbench ramp, inverted. Anchored on VS Code's Light+ workbench so the
-   * editor reads as a familiar light IDE rather than an inverted dark one:
-   * white editor bed, grey everywhere else, GitHub-ish neutral text.
-   *
-   * Only --wb-2 and --wb-5 are pure white, and both are earned: wb-2 is the
-   * bed you read CODE on, and wb-5 is what makes a dropdown or a dialog lift
-   * off the page. Everything structural -- the canvas (wb-1), the panels and
-   * toolbars (wb-3), the rows and hover beds (wb-4) -- is grey, which is how
-   * the light themes people compare us against read: white is the content,
-   * grey is the chrome around it. An all-white build looks unfinished and
-   * loses every edge between panes. */
-  --wb-0:  #fbfbfc;
-  --wb-1:  #e9ebee;
-  --wb-2:  #ffffff;
-  --wb-3:  #eceef1;
-  --wb-4:  #e0e3e8;
-  --wb-5:  #ffffff;
-  --wb-6:  #d5d9df;
-  --wb-7:  #c4c9d1;
-  --wb-8:  #aab0ba;
-  --wb-9:  #8c949e;
-  --wb-10: #6e7781;
-  --wb-11: #57606a;
-  --wb-12: #24292f;
-  --wb-13: #0d1117;
+  /* Workbench ramp — Tactile Warm Cream palette for Kids-to-Pro (5-20yo) */
+  --wb-0:  #faf4e8;  /* deepest warm cream bed */
+  --wb-1:  #f4ecde;  /* simulator canvas warm cream ground */
+  --wb-2:  #fffdf9;  /* code editor & dialog ivory surface */
+  --wb-3:  #efe5d4;  /* panel headers, toolbars, sidebars */
+  --wb-4:  #e6dac6;  /* panel alt: rows, inputs, hover beds */
+  --wb-5:  #fffdf9;  /* elevated: dropdowns, popovers */
+  --wb-6:  #d8cbb4;  /* warm border */
+  --wb-7:  #c5b69c;  /* strong tactile border */
+  --wb-8:  #a8987e;  /* divider on elevated surfaces */
+  --wb-9:  #8a7b65;  /* placeholders, timestamps */
+  --wb-10: #6b5d4b;  /* secondary labels */
+  --wb-11: #524536;  /* muted text — icons, inactive tabs */
+  --wb-12: #2c2219;  /* primary espresso body text */
+  --wb-13: #18110b;  /* strong titles, active tab */
 
-  /* Backgrounds. Surface-1 is the card white; the canvas behind it is the
-   * light-gray ground, mirroring how dark puts the darkest value furthest
-   * back. */
-  --color-bg-canvas:    #eef0f3;
-  --color-bg-surface-1: var(--gray-0);
-  --color-bg-surface-2: #f6f7f9;
-  --color-bg-surface-3: var(--gray-200);
-  --color-bg-input:     var(--gray-0);
-  --color-bg-overlay:   rgba(20, 20, 22, 0.40);
-  --color-bg-header:    rgba(252, 252, 253, 0.88);
+  /* Backgrounds */
+  --color-bg-canvas:    #f8f1e6;
+  --color-bg-surface-1: #fffdf9;
+  --color-bg-surface-2: #f4ecde;
+  --color-bg-surface-3: #e8dcc8;
+  --color-bg-input:     #fffdf9;
+  --color-bg-overlay:   rgba(44, 34, 25, 0.42);
+  --color-bg-header:    rgba(248, 241, 230, 0.94);
 
   /* Foreground */
-  --color-fg-default: var(--gray-850);
-  --color-fg-muted:   var(--gray-600);
-  --color-fg-subtle:  var(--gray-500);
+  --color-fg-default: #2c2219;
+  --color-fg-muted:   #5e503f;
+  --color-fg-subtle:  #7d6e5b;
   --color-fg-on-action: var(--gray-0);
 
-  /* Borders — black at low alpha, the mirror of dark's white-at-low-alpha. */
-  --color-border-default: rgba(0, 0, 0, 0.12);
-  --color-border-strong:  rgba(0, 0, 0, 0.22);
-  --color-border-subtle:  rgba(0, 0, 0, 0.06);
+  /* Borders */
+  --color-border-default: rgba(66, 48, 28, 0.14);
+  --color-border-strong:  rgba(66, 48, 28, 0.24);
+  --color-border-subtle:  rgba(66, 48, 28, 0.08);
 
-  --color-wash-hover:    rgba(0, 0, 0, 0.05);
-  --color-wash-active:   rgba(0, 0, 0, 0.09);
-  --color-wash-selected: rgba(0, 113, 227, 0.16);
+  --color-wash-hover:    rgba(66, 48, 28, 0.06);
+  --color-wash-active:   rgba(66, 48, 28, 0.11);
+  --color-wash-selected: rgba(212, 105, 30, 0.18);
 
-  /* Actions. Hover DARKENS on light (blue-700) where dark LIGHTENS it
-   * (blue-500) — hover has to move away from the page, not toward it. */
-  --color-action-primary:       var(--blue-600);
-  --color-action-primary-hover: var(--blue-700);
+  /* Actions — Warm Tactile Orange in Light Mode */
+  --color-action-primary:       #d4691e;
+  --color-action-primary-hover: #b85614;
   --color-action-primary-fg:    var(--gray-0);
-  --color-action-secondary:     var(--gray-200);
-  --color-action-secondary-hover: var(--gray-300);
+  --color-action-secondary:     #e8dcc8;
+  --color-action-secondary-hover: #d8cbb4;
 
-  --color-accent-soft:        rgba(0, 113, 227, 0.10);
-  --color-accent-soft-strong: rgba(0, 113, 227, 0.20);
-  --color-accent-fg:          var(--blue-700);
+  --color-accent-soft:        rgba(212, 105, 30, 0.12);
+  --color-accent-soft-strong: rgba(212, 105, 30, 0.22);
+  --color-accent-fg:          #b85614;
 
   /* Feedback — the 500s are tuned for contrast against black and go muddy
    * on white, so light mode drops to the 600s. */

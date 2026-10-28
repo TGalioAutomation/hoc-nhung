@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="vi" data-age-band="band-b">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Học Lập Trình Nhúng &amp; ESP32 (5–20 Tuổi) — 3D WebGL Workbench</title>
+  <meta name="description" content="Nền tảng học lập trình nhúng &amp; vi điều khiển ESP32 tương tác 3D WebGL theo phân tầng lứa tuổi 5–8 (Kid Spark), 9–13 (Block Explorer), và 14–20 (Maker Pro).">
+  
+  <!-- Three.js ES Module Import Map (VISUAL_3D_SPEC.md: Section 1.1) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./node_modules/three/build/three.module.js"
+    }
+  }
+  </script>
+
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <!-- Fixed Artboard Container (1672px x 941px base coordinates - VISUAL_3D_SPEC.md: Section 1.1) -->
+  <div class="artboard" id="artboard">
+
+    <!-- Top App Header (Brand, Age-Band Tabs, Gamification, Search, Board, Actions) -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-wifi-badge" aria-hidden="true">⚡</span>
+        <div>
+          <span class="brand-title">LEARN ESP32</span>
+          <span class="brand-subtitle" id="band-badge">Block Explorer (9–13)</span>
+        </div>
+      </div>
+
+      <!-- Age Band Switcher (RULE-001) -->
+      <nav class="age-band-switcher" aria-label="Lựa chọn phân khúc độ tuổi">
+        <button class="band-tab" data-band="band-a" aria-label="Band A: Kid Spark 5 đến 8 tuổi">
+          <span>🎈</span> 5–8 Kid Spark
+        </button>
+        <button class="band-tab active" data-band="band-b" aria-label="Band B: Block Explorer 9 đến 13 tuổi">
+          <span>🧩</span> 9–13 Block Explorer
+        </button>
+        <button class="band-tab" data-band="band-c" aria-label="Band C: Maker Pro 14 đến 20 tuổi">
+          <span>🚀</span> 14–20 Maker Pro
+        </button>
+      </nav>
+
+      <!-- Gamification & Level Status (RULE-005) -->
+      <div class="gamification-bar">
+        <div class="xp-badge" id="xp-counter" title="Điểm kinh nghiệm tích lũy">
+          <span>⭐</span> <span id="xp-val">0</span> XP
+        </div>
+        <div class="streak-badge" id="streak-counter" title="Chuỗi ngày học liên tục">
+          <span>🔥</span> <span id="streak-val">3</span> ngày
+        </div>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0" id="progress-bar-track">
+          <div class="progress-fill" id="progress-bar-fill"></div>
+        </div>
+        <span class="progress-label" id="progress-label">0/20</span>
+      </div>
+
+      <!-- Search Box & Board Selector -->
+      <div class="header-tools">
+        <div class="search-box" id="search-box" title="Tìm kiếm bài học (Cmd+K)">
+          <span class="search-icon">🔍</span>
+          <span class="search-placeholder">Tìm kiếm...</span>
+          <kbd class="search-kbd">⌘K</kbd>
+        </div>
+        <div class="board-selector" id="board-selector">
+          <button class="btn-board-type active" id="btn-board-30" data-board="30">30-pin</button>
+          <button class="btn-board-type" id="btn-board-38" data-board="38">38-pin</button>
+        </div>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="header-actions">
+        <button class="btn-icon" id="btn-quiz" title="Câu đố thử thách kiến thức" aria-label="Câu đố thử thách">❓</button>
+        <button class="btn-icon" id="btn-pinout" title="Sơ đồ chân ESP32 Pinout" aria-label="Sơ đồ chân ESP32">📌</button>
+        <button class="btn-icon" id="btn-schematic" title="Sơ đồ nguyên lý mạch" aria-label="Sơ đồ nguyên lý">📐</button>
+        <button class="btn-icon" id="btn-settings" title="Cài đặt hệ thống" aria-label="Cài đặt hệ thống">⚙️</button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Area -->
+    <main class="app-workspace" id="app-workspace">
+
+      <!-- Zone 1: Left Icon Rail (72px wide) -->
+      <aside class="icon-rail" id="icon-rail" aria-label="Thanh điều hướng thanh bên">
+        <button class="rail-btn active" id="btn-rail-home" title="Trang chủ">
+          <span class="rail-icon">🏠</span>
+          <span class="rail-text">Home</span>
+        </button>
+        <button class="rail-btn" id="btn-rail-lessons" title="Danh mục bài học">
+          <span class="rail-icon">📚</span>
+          <span class="rail-text">Bài Học</span>
+        </button>
+        <button class="rail-btn" id="btn-rail-components" title="Thư viện linh kiện">
+          <span class="rail-icon">🔌</span>
+          <span class="rail-text">Linh Kiện</span>
+        </button>
+        <button class="rail-btn" id="btn-rail-reference" title="Tra cứu Pinout & Sơ đồ">
+          <span class="rail-icon">📖</span>
+          <span class="rail-text">Tra Cứu</span>
+        </button>
+        <button class="rail-btn" id="btn-rail-settings" title="Cài đặt hệ thống">
+          <span class="rail-icon">⚙️</span>
+          <span class="rail-text">Cài Đặt</span>
+        </button>
+        <button class="rail-btn" id="btn-rail-language" title="Ngôn ngữ hiển thị">
+          <span class="rail-icon">🌐</span>
+          <span class="rail-text">Tiếng Việt</span>
+        </button>
+      </aside>
+
+      <!-- Drawer: Collapsible Curriculum Lessons Sidebar -->
+      <aside class="lessons-sidebar sidebar drawer-sidebar" id="lessons-sidebar-drawer" aria-label="Danh mục 20 bài học">
+        <div class="sidebar-header">
+          <span class="sidebar-title">Danh Mục Bài Học</span>
+          <span class="lesson-num" id="active-lesson-counter">20 Bài</span>
+          <button class="btn-icon btn-close-drawer" id="btn-close-lessons-drawer" aria-label="Đóng danh mục">✕</button>
+        </div>
+        <ul class="lessons-list" id="lessons-list">
+          <!-- Injected via app.js -->
+        </ul>
+      </aside>
+
+      <!-- Zone 2: Central Hardware Viewport / 3D WebGL Simulation Stage -->
+      <section class="viewport-area stage" aria-label="Không gian mô phỏng phần cứng 3D" id="sim-container">
+        <!-- 3D WebGL Canvas (VISUAL_3D_SPEC.md: Section 3) -->
+        <canvas id="webgl-stage" class="board-canvas"></canvas>
+
+        <!-- Dynamic Orthogonal SVG Leader Lines (VISUAL_3D_SPEC.md: Section 5.2) -->
+        <svg id="insp-lines" class="insp-lines" aria-hidden="true"></svg>
+
+        <!-- Multi-Card Perimeter Inspector Layer (VISUAL_3D_SPEC.md: Section 5) -->
+        <div id="inspector-cards-layer" class="inspector-cards-layer" aria-label="Thanh tra linh kiện đa điểm"></div>
+
+        <!-- Floor Grid Overlay -->
+        <div class="grid-overlay" id="grid-overlay"></div>
+
+        <!-- 2D SVG Hardware Stage Mockup (Retained for Test Suite & Interaction Fallback) -->
+        <div class="hardware-stage" id="hardware-stage">
+          <svg class="esp32-board-svg" viewBox="0 0 460 260" width="460" height="260" aria-label="Bo mạch vi điều khiển ESP32">
+            <rect x="20" y="20" width="420" height="220" rx="14" fill="#1b2430" stroke="#384a60" stroke-width="3" />
+            <rect x="50" y="55" width="130" height="150" rx="6" fill="#4a5568" stroke="#718096" stroke-width="2" />
+            <text x="115" y="125" fill="#a0aec0" font-size="14" font-weight="bold" text-anchor="middle" font-family="monospace">ESP-WROOM-32</text>
+            <text x="115" y="145" fill="#cbd5e0" font-size="11" text-anchor="middle" font-family="monospace">Wi-Fi &amp; BT</text>
+            <rect x="10" y="105" width="22" height="50" rx="4" fill="#a0aec0" stroke="#4a5568" stroke-width="2" />
+            <circle cx="215" cy="65" r="5" fill="#ff3b30" class="led-pwr lit" id="led-pwr-indicator" />
+            <text x="215" y="80" fill="#a0aec0" font-size="9" text-anchor="middle">PWR</text>
+            <circle cx="215" cy="195" r="5" fill="#1e3a8a" class="led-onboard" id="led-gpio2-indicator" />
+            <text x="215" y="210" fill="#a0aec0" font-size="9" text-anchor="middle">IO2</text>
+            <circle cx="215" cy="120" r="4" fill="#333" class="txrx-led" id="led-tx" />
+            <circle cx="215" cy="140" r="4" fill="#333" class="txrx-led" id="led-rx" />
+            <text x="230" y="123" fill="#a0aec0" font-size="8">TX</text>
+            <text x="230" y="143" fill="#a0aec0" font-size="8">RX</text>
+            <g id="left-pin-headers">
+              <rect x="25" y="30" width="12" height="10" fill="#d4af37" rx="1" />
+              <rect x="25" y="220" width="12" height="10" fill="#d4af37" rx="1" />
+            </g>
+            <g id="right-pin-headers">
+              <rect x="423" y="30" width="12" height="10" fill="#d4af37" rx="1" />
+              <rect x="423" y="220" width="12" height="10" fill="#d4af37" rx="1" />
+            </g>
+            <g id="sim-dynamic-actors"></g>
+          </svg>
+        </div>
+
+        <!-- Floating Component Inspector Card (Retained for DOM tests) -->
+        <div class="inspector-card" id="inspector" role="region" aria-label="Thanh tra linh kiện">
+          <div class="insp-header" id="insp-header">
+            <span class="insp-title" id="insp-title">Thanh Tra Linh Kiện</span>
+            <button class="btn-icon btn-close-insp" id="btn-close-inspector" aria-label="Đóng thanh tra">✕</button>
+          </div>
+          <div class="insp-body">
+            <p class="insp-desc" id="insp-desc">Chọn một linh kiện trên sân khấu 3D để xem phân tích chi tiết.</p>
+            <div class="insp-pins" id="insp-pins"></div>
+          </div>
+        </div>
+
+        <!-- Viewport Camera Navigation Toolbar (VISUAL_3D_SPEC.md: Section 3.1 & RULE-009) -->
+        <div class="viewport-toolbar viewbar" role="toolbar" aria-label="Điều khiển góc nhìn camera">
+          <button id="btn-rot-left" title="Xoay trái 90° (Q)">↺</button>
+          <button id="btn-rot-right" title="Xoay phải 90° (E)">↻</button>
+          <button id="btn-zoom-out" title="Thu nhỏ (-)">−</button>
+          <button id="btn-zoom-in" title="Phóng to (+)">+</button>
+          <button id="btn-reset-view" title="Khôi phục góc nhìn mặc định (R)">🎯 Đặt lại</button>
+          <button id="btn-toggle-grid" title="Bật/Tắt lưới sàn" class="active">Lưới</button>
+          <button id="btn-toggle-sound" title="Bật/Tắt âm thanh Web Audio" class="active">🔊 Âm thanh</button>
+        </div>
+
+        <!-- Floating Schematic Card (VISUAL_3D_SPEC.md: Section 6 & RULE-009) -->
+        <div class="floating-schematic schematic-card" id="floating-schematic" role="dialog" aria-labelledby="sch-title" aria-modal="false">
+          <div class="schematic-header" id="schematic-drag-handle">
+            <strong id="sch-title">📐 Sơ Đồ Nguyên Lý Mạch</strong>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button class="sch-grip" id="sch-grip" title="Kéo để đổi kích cỡ">↔</button>
+              <button class="btn-icon" id="btn-close-schematic" style="width: 24px; height: 24px; font-size: 0.8rem;">✕</button>
+            </div>
+          </div>
+          <div class="schematic-body" id="schematic-content">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Interactive Control Overlay at bottom of viewport -->
+        <div class="interactive-overlay" id="interactive-overlay">
+          <div class="interactive-header">
+            <span class="interactive-title" id="interactive-title">Điều Khiển Tương Tác Trực Tiếp</span>
+            <span class="lesson-num" id="sim-status-pill">Sẵn sàng</span>
+          </div>
+          <div class="interactive-controls-row" id="interactive-controls-container">
+            <!-- Injected per active lesson -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Zone 3: Right Dual-Card Column (420px wide) -->
+      <section class="right-panel stacked-panels" aria-label="Không gian lập trình &amp; thực thi">
+
+        <!-- Upper Panel: 5-Tab Lesson Card (Overview, Pinout, Quiz, Safeguard, Progress) -->
+        <div class="info-card" id="info-card">
+          <div class="card-lesson-header">
+            <div class="lesson-badge-row">
+              <span class="lesson-chip" id="top-lesson-badge">BÀI 01 / 20</span>
+              <div class="lesson-step-nav">
+                <button class="btn-step" id="btn-prev-lesson" title="Bài trước">◀</button>
+                <button class="btn-step" id="btn-next-lesson" title="Bài tiếp">▶</button>
+              </div>
+            </div>
+            <h3 class="lesson-card-title" id="top-lesson-title">Làm Quen Với ESP32</h3>
+          </div>
+
+          <!-- 5 Tabs: OVERVIEW, PINOUT, QUIZ, SAFE-GUARD, PROGRESS -->
+          <div class="card-tabs-nav" role="tablist">
+            <button class="card-tab active" data-tab="overview" id="tab-overview">TỔNG QUAN</button>
+            <button class="card-tab" data-tab="pinout" id="tab-pinout">SƠ ĐỒ CHÂN</button>
+            <button class="card-tab" data-tab="quiz" id="tab-quiz">CÂU ĐỐ</button>
+            <button class="card-tab" data-tab="safeguard" id="tab-safeguard">BẢO VỆ</button>
+            <button class="card-tab" data-tab="progress" id="tab-progress">TIẾN TRÌNH</button>
+          </div>
+
+          <div class="tab-panels-content">
+            <!-- Tab Panel 1: Overview -->
+            <div class="tab-panel active" id="tab-panel-overview">
+              <!-- Band A: Visual Story Cards -->
+              <div class="story-cards-container hide-on-band-b hide-on-band-c" id="story-cards-container">
+                <!-- Injected via app.js -->
+              </div>
+
+              <!-- Band B: Visual Block Workspace -->
+              <div class="blocks-workspace-container hide-on-band-a hide-on-band-c" id="blocks-workspace-container">
+                <div class="panel-header">
+                  <span class="interactive-title">Khối Lệnh Trực Quan (Blockly)</span>
+                  <button class="btn-run" id="btn-run-blocks">▶ Chạy Khối</button>
+                </div>
+                <div id="blocks-list" style="display: flex; flex-direction: column; gap: 8px;">
+                  <!-- Injected via app.js -->
+                </div>
+              </div>
+
+              <div class="lesson-overview-summary" id="lesson-overview-summary">
+                <p id="lesson-description-text"></p>
+              </div>
+            </div>
+
+            <!-- Tab Panel 2: Pinout Quick View -->
+            <div class="tab-panel" id="tab-panel-pinout">
+              <div class="panel-header">
+                <span class="interactive-title">Sơ Đồ Chân Bài Học</span>
+                <button class="btn-sm" id="btn-open-full-pinout">Mở Sơ Đồ Toàn Phần 📌</button>
+              </div>
+              <div class="tab-pinout-body" id="tab-pinout-body"></div>
+            </div>
+
+            <!-- Tab Panel 3: Quiz Quick View -->
+            <div class="tab-panel" id="tab-panel-quiz">
+              <div class="panel-header">
+                <span class="interactive-title">Câu Đố Thử Thách</span>
+                <button class="btn-run" id="btn-open-full-quiz">Mở Thử Thách ❓</button>
+              </div>
+              <div class="tab-quiz-body" id="tab-quiz-body"></div>
+            </div>
+
+            <!-- Tab Panel 4: Safe-Guard Hardware Rules -->
+            <div class="tab-panel" id="tab-panel-safeguard">
+              <div class="panel-header">
+                <span class="interactive-title">Quy Chuẩn An Toàn Điện ESP32</span>
+              </div>
+              <div class="safeguard-content">
+                <div class="safeguard-item warn">
+                  <strong>⚡ Điện Áp Logic 3.3V Tuyệt Đối</strong>
+                  <p>Mức điện áp hoạt động tối đa của vi điều khiển ESP32 là 3.3V. Cấp 5V trực tiếp vào các chân GPIO sẽ làm hỏng IC.</p>
+                </div>
+                <div class="safeguard-item alert">
+                  <strong>🛑 Chân Chỉ Đầu Vào (Input-Only)</strong>
+                  <p>Các chân GPIO 34, 35, 36, 39 không có mạch kéo nội và không hỗ trợ chế độ OUTPUT.</p>
+                </div>
+                <div class="safeguard-item info">
+                  <strong>💡 Giới Hạn Dòng Điện 12mA / 20mA</strong>
+                  <p>Dòng khuyến nghị cho mỗi chân là 12mA, tối đa 20mA. Luôn nối tiếp điện trở hạn dòng 220Ω khi cắm LED.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab Panel 5: Progress & Badges -->
+            <div class="tab-panel" id="tab-panel-progress">
+              <div class="panel-header">
+                <span class="interactive-title">Tiến Độ &amp; Huy Hiệu</span>
+              </div>
+              <div class="progress-tab-stats" id="progress-tab-stats"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lower Panel: Dual C++/Python Code Editor & Serial Monitor (Band C) -->
+        <div class="code-card" id="code-card">
+          <div class="code-card-top-bar">
+            <span class="code-card-heading">TRY IT YOURSELF</span>
+            <div class="lang-toggle">
+              <button class="lang-btn" id="btn-mode-blocks">Khối</button>
+              <button class="lang-btn active" id="btn-lang-cpp">Arduino C++</button>
+              <button class="lang-btn" id="btn-lang-py">MicroPython</button>
+            </div>
+          </div>
+
+          <div class="code-editor-container" id="code-editor-container">
+            <!-- Code Display with Line Tracing (RULE-006) -->
+            <div class="code-display" id="code-display" tabindex="0" aria-label="Mã nguồn chương trình">
+              <!-- Lines rendered via app.js -->
+            </div>
+
+            <!-- Run & Stop Action Bar -->
+            <div class="code-actions-bar">
+              <button class="btn-run btn-run-circular" id="btn-code-run" title="Nạp &amp; Chạy">
+                <span class="run-icon">▶</span>
+              </button>
+              <button class="btn-stop" id="btn-code-stop" title="Dừng">
+                <span>⏹</span> Dừng
+              </button>
+              <span class="execution-state-label" id="execution-state-label">Trạng thái: Sẵn sàng</span>
+            </div>
+
+            <!-- Serial Monitor Console with Resize Grip (RULE-006) -->
+            <div class="serial-monitor-panel" id="serial-panel">
+              <div class="serial-resize-grip" id="serial-grip" title="Kéo để thay đổi chiều cao, nhấn đúp để về 92px"></div>
+              <div class="serial-header">
+                <span>Màn Hình Nối Tiếp (Serial Monitor @ 115200 bps)</span>
+                <button id="btn-clear-serial" style="background:transparent; border:none; color:var(--color-text-muted); cursor:pointer;">Xóa log</button>
+              </div>
+              <div class="serial-logs" id="serial-logs" role="log" aria-live="polite">
+                <span class="serial-line info">ESP32 DevKit V1 Initialized. Ready for commands.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Zone 4: Bottom Horizontal Lesson Carousel (VISUAL_3D_SPEC.md: Section 1.2) -->
+      <nav class="bottom-carousel" id="bottom-carousel" aria-label="Thanh trượt 20 bài học">
+        <div class="carousel-strip-header">
+          <span class="carousel-strip-title">LESSONS</span>
+          <div class="carousel-nav-arrows">
+            <button class="btn-carousel-arrow" id="btn-carousel-prev" title="Bài trước" aria-label="Cuộn sang trái">◀</button>
+            <button class="btn-carousel-arrow" id="btn-carousel-next" title="Bài tiếp theo" aria-label="Cuộn sang phải">▶</button>
+          </div>
+        </div>
+        <div class="carousel-track" id="carousel-track">
+          <!-- Dynamically populated per lesson in app.js -->
+        </div>
+      </nav>
+    </main>
+  </div>
+
+  <!-- Pinout Explorer Modal (RULE-002) -->
+  <div class="modal-backdrop" id="modal-pinout" role="dialog" aria-modal="true" aria-labelledby="pinout-modal-title">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title" id="pinout-modal-title">Sơ Đồ Chân ESP32 DevKit V1 (30 / 38 Pinout)</h2>
+        <button class="btn-icon" id="btn-close-pinout">✕</button>
+      </div>
+      <div class="modal-content">
+        <div style="margin-bottom: 1rem; display: flex; gap: 10px; font-size: 0.85rem;">
+          <span class="pin-tag power">Nguồn (3.3V/5V)</span>
+          <span class="pin-tag gnd">GND</span>
+          <span class="pin-tag input-only">Chỉ Đầu Vào (34, 35, 36, 39)</span>
+          <span class="pin-tag io">GPIO / PWM / ADC</span>
+        </div>
+        <div class="pinout-grid" id="pinout-grid-content">
+          <!-- Injected via app.js -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz Modal (RULE-005) -->
+  <div class="modal-backdrop" id="modal-quiz" role="dialog" aria-modal="true" aria-labelledby="quiz-modal-title">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title" id="quiz-modal-title">Câu Đố Thử Thách Kiến Thức</h2>
+        <button class="btn-icon" id="btn-close-quiz">✕</button>
+      </div>
+      <div class="modal-content" id="quiz-modal-content">
+        <!-- Injected via app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal (RULE-010) -->
+  <div class="modal-backdrop" id="modal-settings" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="settings-modal-title">Tùy Chọn Môi Trường &amp; Trợ Năng (a11y)</h2>
+        <button class="btn-icon" id="btn-close-settings">✕</button>
+      </div>
+      <div class="modal-content" style="display: flex; flex-direction: column; gap: 1rem;">
+        <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+          <span>Hiển thị nhãn chỉ dẫn &amp; chú thích</span>
+          <input type="checkbox" id="setting-labels" checked>
+        </label>
+        <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+          <span>Hiển thị lưới tọa độ sàn mờ</span>
+          <input type="checkbox" id="setting-grid" checked>
+        </label>
+        <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+          <span>Âm thanh hiệu ứng Web Audio</span>
+          <input type="checkbox" id="setting-sound" checked>
+        </label>
+        <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+          <span>Chế độ giảm chuyển động (Reduced Motion)</span>
+          <input type="checkbox" id="setting-reduced-motion">
+        </label>
+        <hr style="border: 0; border-top: 1px solid var(--color-border);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>Đặt lại toàn bộ tiến trình</strong>
+            <p style="font-size: 0.8rem; color: var(--color-text-muted);">Xóa toàn bộ điểm XP, huy hiệu và bài đã học</p>
+          </div>
+          <button class="btn-stop" id="btn-reset-progress" style="padding: 6px 12px; font-size: 0.85rem;">Xóa sạch</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tooltip and Part Inspector Vector Callout Lines (RULE-009) -->
+  <div id="tip" style="position: absolute; display: none; background: #000; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; pointer-events: none; z-index: 60;"></div>
+
+  <!-- Application Bootstrap -->
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

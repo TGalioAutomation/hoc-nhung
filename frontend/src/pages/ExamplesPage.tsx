@@ -38,7 +38,7 @@ export const ExamplesPage: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         minHeight: '100vh',
-        background: '#1e1e1e',
+        background: 'var(--color-bg-canvas)',
       }}
     >
       <AppHeader />

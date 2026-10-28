@@ -464,10 +464,11 @@ export const ExamplesGallery: React.FC<ExamplesGalleryProps> = ({ onLoadExample 
                     className="example-difficulty"
                     style={{ backgroundColor: getDifficultyColor(example.difficulty) }}
                   >
-                    {example.difficulty}
+                    {t(`examples.filters.difficulty.${example.difficulty}`, example.difficulty)}
                   </span>
                   <span className="example-category">
-                    {getCategoryIcon(example.category)} {example.category}
+                    {getCategoryIcon(example.category)}{' '}
+                    {t(`examples.filters.category.${example.category}`, example.category)}
                   </span>
                   {boardBadge && (
                     <span

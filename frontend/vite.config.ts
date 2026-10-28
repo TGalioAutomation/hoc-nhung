@@ -15,7 +15,7 @@ const proOverlayPath =
     ? path.resolve(process.env.PRO_OVERLAY_PATH)
     : path.resolve(__dirname, 'src/__pro_stub__')
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(() => ({
   plugins: [react()],
   resolve: {
     alias: {
@@ -44,10 +44,12 @@ export default defineConfig(({ command }) => ({
     preserveSymlinks: !!process.env.VITE_PRO_BUILD,
   },
   server: {
+    port: 3000,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8001',
+        target: 'http://127.0.0.1:3080',
         changeOrigin: true,
+        ws: true,
       },
     },
   },

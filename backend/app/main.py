@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import asyncio
 from contextlib import asynccontextmanager
@@ -69,12 +70,14 @@ app = FastAPI(
 # every fetch to velxio.dev is cross-origin and the browser blocks
 # preflight unless we explicitly allow the Tauri scheme(s).
 #
-# Tauri origin per OS:
-#   - macOS / Linux: `tauri://localhost`
-#   - Windows:       `http://tauri.localhost`
-#   - older Tauri:   `https://tauri.localhost`
-# All three are listed so the desktop bundle works regardless of
-# host OS or Tauri version.
+# Also support CORS_ALLOW_ORIGIN_REGEX for Cloudflare Pages/Workers previews,
+# custom domains, and tunnels (e.g. *.pages.dev, *.workers.dev, *.apexdev.website,
+# *.trycloudflare.com).
+cors_origin_regex = os.getenv(
+    "CORS_ALLOW_ORIGIN_REGEX",
+    getattr(settings, "CORS_ALLOW_ORIGIN_REGEX", r"https://(.*\.)?(pages\.dev|workers\.dev|apexdev\.website|trycloudflare\.com)"),
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -86,6 +89,7 @@ app.add_middleware(
         "https://tauri.localhost",
         settings.FRONTEND_URL,
     ],
+    allow_origin_regex=cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -15,6 +15,8 @@ import { NON_DEFAULT_LOCALES } from './i18n/config';
 import { useProRoutes, useProRoutesSettled } from './lib/proRoutes';
 import { triggerSessionCheck } from './lib/proSession';
 import { MessageDialogHost } from './components/ui/MessageDialogHost';
+import { AccountManagerModal } from './components/account/AccountManagerModal';
+import './lib/proUnlockInit';
 import './App.css';
 
 /**
@@ -71,9 +73,9 @@ const ROUTES: { path: string; element: ReactElement; index?: boolean }[] = [
  * keeps the canonical no-prefix English URLs (good for SEO) while handling the
  * guessed ones gracefully.
  */
-function EnPrefixRedirect() {
+function DefaultPrefixRedirect() {
   const { pathname, search, hash } = useLocation();
-  const stripped = pathname.replace(/^\/en(?=\/|$)/, '');
+  const stripped = pathname.replace(/^\/vi(?=\/|$)/, '');
   return <Navigate to={(stripped || '/') + search + hash} replace />;
 }
 
@@ -136,12 +138,14 @@ function App() {
 
           {/* `/en/...` is the default locale spelled out — redirect to the
               canonical prefix-free path instead of rendering a blank page. */}
-          <Route path="/en/*" element={<EnPrefixRedirect />} />
+          <Route path="/vi/*" element={<DefaultPrefixRedirect />} />
         </Routes>
       </LocaleSync>
       {/* Global alert() replacement — opened from anywhere (React or plain
           .ts) via showMessageDialog() in store/useMessageDialogStore. */}
       <MessageDialogHost />
+      {/* Account & Universal Pro Management Hub */}
+      <AccountManagerModal />
     </Router>
   );
 }

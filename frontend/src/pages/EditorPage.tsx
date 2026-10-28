@@ -35,6 +35,9 @@ import { useAutoSaveProject } from '../hooks/useAutoSaveProject';
 import { registerEditorCommand } from '../lib/editorCommands';
 import { whenNewsClear } from '../lib/newsGate';
 import { EditorMenuBar } from '../components/editor/EditorMenuBar';
+import { GamificationHeaderPill } from '../components/gamification/GamificationHeaderPill';
+import { QuestDrawer } from '../components/gamification/QuestDrawer';
+import { HeaderAccountButton } from '../components/account/HeaderAccountButton';
 import type { CompilationLog } from '../utils/compilationLogger';
 import '../App.css';
 
@@ -156,14 +159,9 @@ export const EditorPage: React.FC = () => {
       sim.components.every((c) => c.id === 'led_builtin' || c.id === 'r_builtin');
     if (!pristine) return;
     starterDialogShownThisLoad = true;
-    clearWorkspaceForStarter();
-    let cancelled = false;
-    void whenNewsClear(2500).then(() => {
-      if (!cancelled) setShowNewProjectDialog(true);
-    });
-    return () => {
-      cancelled = true;
-    };
+    // Giữ nguyên mạch mẫu khởi đầu (Arduino Uno + LED + Điện trở) để học sinh có thể bấm Chạy (Run) ngay lập tức!
+    void clearWorkspaceForStarter;
+    void whenNewsClear;
   }, []);
 
   // ── GitHub star prompt (show twice at most, after 10 min in the editor) ────
@@ -463,10 +461,9 @@ export const EditorPage: React.FC = () => {
      box; when the explorer is collapsed it falls back to the small fixed
      corner box (avatar only there — no room for a name). */
   const accountBlock = !isMobile ? (
-    // Just the account button. Language lives in the menubar's Language
-    // menu (for everyone) and inside the account menu (for signed-in
-    // users) — the standalone globe crowded the footer for no gain.
-    <div data-velxio-slot="header-auth" style={{ display: 'contents' }} />
+    <div data-velxio-slot="header-auth" style={{ display: 'contents' }}>
+      <HeaderAccountButton compact />
+    </div>
   ) : undefined;
 
   const unifiedToolbar = !isMobile ? (
@@ -571,6 +568,8 @@ export const EditorPage: React.FC = () => {
               setCompileLogs={setCompileLogs}
             />
           </div>
+          <GamificationHeaderPill />
+          <HeaderAccountButton />
           <div className="unified-toolbar-canvas" ref={setCanvasHeaderSlot} />
         </div>
   ) : undefined;
@@ -819,6 +818,9 @@ export const EditorPage: React.FC = () => {
             </>
           )}
         </div>
+
+        {/* ── Gamified Quest & Lesson Panel (400+ Dự Án Thực Hành 5–20 Tuổi) ── */}
+        {!isMobile && <QuestDrawer />}
       </div>
 
       {showStarBanner && (

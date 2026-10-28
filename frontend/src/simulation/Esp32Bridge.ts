@@ -458,7 +458,11 @@ export class Esp32Bridge {
       this._connected = false;
     }
 
-    const base = API_BASE();
+    const rawBase = API_BASE();
+    const base =
+      rawBase.startsWith('/') && typeof window !== 'undefined'
+        ? `${window.location.origin}${rawBase}`
+        : rawBase;
     const wsProtocol = base.startsWith('https') ? 'wss:' : 'ws:';
     const sessionId = getTabSessionId();
     const wsUrl =

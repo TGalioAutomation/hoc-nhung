@@ -9,6 +9,7 @@
  */
 
 export const LOCALES = [
+  "vi",
   "en",
   "es",
   "pt-br",
@@ -22,10 +23,10 @@ export const LOCALES = [
 
 export type Locale = (typeof LOCALES)[number];
 
-export const DEFAULT_LOCALE: Locale = "en";
+export const DEFAULT_LOCALE: Locale = "vi";
 
 export const NON_DEFAULT_LOCALES = LOCALES.filter(
-  (l): l is Exclude<Locale, "en"> => l !== DEFAULT_LOCALE
+  (l): l is Exclude<Locale, "vi"> => l !== DEFAULT_LOCALE
 );
 
 export type LocaleMeta = {
@@ -40,6 +41,7 @@ export type LocaleMeta = {
 };
 
 export const LOCALE_META: Record<Locale, LocaleMeta> = {
+  vi: { htmlLang: "vi", nativeName: "Tiếng Việt", ogLocale: "vi_VN", dir: "ltr" },
   en: { htmlLang: "en", nativeName: "English", ogLocale: "en_US", dir: "ltr" },
   es: { htmlLang: "es", nativeName: "Español", ogLocale: "es_ES", dir: "ltr" },
   "pt-br": {

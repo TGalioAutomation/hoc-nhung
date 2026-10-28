@@ -10,6 +10,7 @@ import './i18n';
 import { initTheme } from './lib/theme';
 import { markProExamplesSettled } from './data/examples';
 import { markProRoutesSettled } from './lib/proRoutes';
+import './lib/proUnlockInit';
 
 /** The overlay import has settled (either way): registries are final. */
 const markProOverlaySettled = (): void => {
