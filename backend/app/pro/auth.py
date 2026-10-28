@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import json
 import logging
 from typing import Any, Optional
 
@@ -44,6 +45,31 @@ def user_to_dict(row: Any) -> dict[str, Any]:
     d.pop("hashed_password", None)
     d["is_admin"] = bool(d.get("is_admin", 0))
     d["is_active"] = bool(d.get("is_active", 1))
+
+    # Parse classroom and graduation progress
+    raw_completed = d.get("completed_lessons_json") or "[]"
+    try:
+        parsed_completed = json.loads(raw_completed) if isinstance(raw_completed, str) else list(raw_completed)
+    except Exception:
+        parsed_completed = []
+    if not isinstance(parsed_completed, list):
+        parsed_completed = []
+
+    raw_graduated = d.get("graduated_classes_json") or "[]"
+    try:
+        parsed_graduated = json.loads(raw_graduated) if isinstance(raw_graduated, str) else list(raw_graduated)
+    except Exception:
+        parsed_graduated = []
+    if not isinstance(parsed_graduated, list):
+        parsed_graduated = []
+
+    try:
+        raw_level = int(d.get("class_level") or 1)
+    except (ValueError, TypeError):
+        raw_level = 1
+    d["class_level"] = max(1, min(5, raw_level))
+    d["completed_lessons"] = [str(x) for x in parsed_completed]
+    d["graduated_classes"] = [int(x) for x in parsed_graduated if str(x).isdigit()]
 
     # Universal Pro Unlock Invariants
     d["is_pro"] = True

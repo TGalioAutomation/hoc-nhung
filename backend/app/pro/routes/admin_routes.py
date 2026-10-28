@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import json
 import re
 import sqlite3
 import uuid
@@ -27,6 +28,7 @@ class AdminCreateUserRequest(BaseModel):
     is_active: Optional[bool] = True
     is_pro: Optional[bool] = True
     plan: Optional[str] = "pro"
+    class_level: Optional[int] = 1
 
 
 class AdminUpdateUserRequest(BaseModel):
@@ -38,6 +40,9 @@ class AdminUpdateUserRequest(BaseModel):
     is_active: Optional[bool] = None
     is_pro: Optional[bool] = None
     plan: Optional[str] = None
+    class_level: Optional[int] = None
+    completed_lessons: Optional[list[str]] = None
+    graduated_classes: Optional[list[int]] = None
 
 
 class AdminResetPasswordRequest(BaseModel):
@@ -92,14 +97,16 @@ async def create_user(req: AdminCreateUserRequest, admin: dict[str, Any] = Depen
             else:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already registered.")
 
+        clamped_class = max(1, min(5, int(req.class_level if req.class_level is not None else 1)))
         conn.execute(
             """
             INSERT INTO users (
                 id, username, email, display_name, hashed_password,
                 role, is_active, is_admin, is_pro, is_paid_subscriber,
                 plan_id, plan, subscription_status, subscription_period_end,
+                class_level, completed_lessons_json, graduated_classes_json,
                 created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 user_id,
@@ -116,6 +123,9 @@ async def create_user(req: AdminCreateUserRequest, admin: dict[str, Any] = Depen
                 req.plan or "pro",
                 "active",
                 "2099-12-31T23:59:59Z",
+                clamped_class,
+                "[]",
+                "[]",
                 now,
                 now,
             ),
@@ -187,8 +197,25 @@ async def update_user(
             updates.append("plan_id = ?")
             params.append(req.plan)
 
+        if req.class_level is not None:
+            clamped_level = max(1, min(5, int(req.class_level)))
+            updates.append("class_level = ?")
+            params.append(clamped_level)
+
+        if req.completed_lessons is not None:
+            unique_completed = list(dict.fromkeys([str(x) for x in req.completed_lessons]))
+            updates.append("completed_lessons_json = ?")
+            params.append(json.dumps(unique_completed))
+
+        if req.graduated_classes is not None:
+            valid_graduated = sorted(list({int(x) for x in req.graduated_classes if 1 <= int(x) <= 5}))
+            updates.append("graduated_classes_json = ?")
+            params.append(json.dumps(valid_graduated))
+
         if not updates:
-            return user_to_dict(existing)
+            res = user_to_dict(existing)
+            res["user"] = dict(res)
+            return res
 
         now = datetime.datetime.now(datetime.timezone.utc).isoformat()
         updates.append("updated_at = ?")
@@ -201,7 +228,9 @@ async def update_user(
         except sqlite3.IntegrityError:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username or email already in use.")
 
-    return user_to_dict(updated_row)
+    res = user_to_dict(updated_row)
+    res["user"] = dict(res)
+    return res
 
 
 @router.post("/users/{user_id}/reset-password")

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGamificationStore, computeLevelInfo } from '../../store/useGamificationStore';
+import { getClassCurriculum, getClassProgress, type ClassLevelNumber } from '../../data/classCurriculum';
 import { exampleProjects } from '../../data/examples';
 
 export const GamificationHeaderPill: React.FC = () => {
@@ -8,8 +9,12 @@ export const GamificationHeaderPill: React.FC = () => {
   const completedIds = useGamificationStore((s) => s.completedIds);
   const questDrawerOpen = useGamificationStore((s) => s.questDrawerOpen);
   const toggleQuestDrawer = useGamificationStore((s) => s.toggleQuestDrawer);
+  const currentClassLevel = useGamificationStore((s) => s.currentClassLevel);
+  const setClassSelectorOpen = useGamificationStore((s) => s.setClassSelectorOpen);
 
   const levelInfo = computeLevelInfo(xp);
+  const classInfo = getClassCurriculum(currentClassLevel);
+  const progress = getClassProgress(currentClassLevel, completedIds);
 
   return (
     <div
@@ -22,6 +27,44 @@ export const GamificationHeaderPill: React.FC = () => {
         flexShrink: 0,
       }}
     >
+      {/* Nút Chọn Lớp Học (Lớp 1 – Lớp 5) & Chuyển Cấp */}
+      <button
+        type="button"
+        onClick={() => setClassSelectorOpen(true)}
+        title={`Đang học: ${classInfo.name} — Bấm để chọn Lớp 1 đến Lớp 5 hoặc thi tốt nghiệp chuyển cấp!`}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          height: 30,
+          padding: '0 11px',
+          borderRadius: 999,
+          border: `1.5px solid ${classInfo.color}`,
+          background: 'var(--wb-3)',
+          color: 'var(--wb-13)',
+          fontSize: 12,
+          fontWeight: 700,
+          cursor: 'pointer',
+          transition: 'all 0.15s ease',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <span>{classInfo.badgeIcon}</span>
+        <span>{classInfo.shortName}</span>
+        <span
+          style={{
+            background: classInfo.color,
+            color: '#fff',
+            borderRadius: 999,
+            padding: '1px 7px',
+            fontSize: 11,
+            fontWeight: 800,
+          }}
+        >
+          {progress.completedCount}/{progress.totalCount}
+        </span>
+      </button>
+
       {/* Nút Bật/Tắt Bảng Bài Học & Nhiệm Vụ 400+ */}
       <button
         type="button"

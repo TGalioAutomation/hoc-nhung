@@ -16,8 +16,11 @@ import { useProRoutes, useProRoutesSettled } from './lib/proRoutes';
 import { triggerSessionCheck } from './lib/proSession';
 import { MessageDialogHost } from './components/ui/MessageDialogHost';
 import { AccountManagerModal } from './components/account/AccountManagerModal';
+import { ClassSelectorModal } from './components/classroom/ClassSelectorModal';
+import { ClassGraduationModal } from './components/classroom/ClassGraduationModal';
 import { CommunityHubModal } from './components/community/CommunityHubModal';
 import { CommunityHubPage } from './pages/CommunityHubPage';
+import { useAuthStore } from './store/useAuthStore';
 import './lib/proUnlockInit';
 import './App.css';
 
@@ -93,6 +96,11 @@ function App() {
   // slot); mapping them here too would mount a second conflicting Route.
   const allRoutes = [...ROUTES, ...proRoutes.filter((r) => !r.index)];
 
+  const user = useAuthStore((s) => s.user);
+  const sessionChecked = useAuthStore((s) => s.sessionChecked);
+  const isAuthModalOpen = useAuthStore((s) => s.isAuthModalOpen);
+  const openAuthModal = useAuthStore((s) => s.openAuthModal);
+
   useEffect(() => {
     // Pro overlay's mountPro() registers a session-check callback that
     // resolves the JWT cookie into a user object. No-op in OSS without
@@ -103,6 +111,13 @@ function App() {
     // every page got a phantom scroll the size of the prerendered SEO body.
     document.getElementById('root-seo')?.remove();
   }, []);
+
+  // Mandatory Login Gate: Automatically open auth modal when session check completes and user is not logged in
+  useEffect(() => {
+    if (sessionChecked && !user && !isAuthModalOpen) {
+      openAuthModal('login');
+    }
+  }, [sessionChecked, user, isAuthModalOpen, openAuthModal]);
 
   return (
     <Router>
@@ -149,6 +164,10 @@ function App() {
       <MessageDialogHost />
       {/* Account & Universal Pro Management Hub */}
       <AccountManagerModal />
+      {/* Classroom Syllabus & Class Selector */}
+      <ClassSelectorModal />
+      {/* Class Graduation & Level Promotion Modal */}
+      <ClassGraduationModal />
       {/* Community Hub & Open Leaderboard Modal */}
       <CommunityHubModal />
     </Router>

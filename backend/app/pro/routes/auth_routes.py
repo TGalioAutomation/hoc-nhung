@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import json
 import re
 import sqlite3
 import uuid
@@ -29,6 +30,7 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
     display_name: Optional[str] = None
+    class_level: Optional[int] = 1
 
 
 class LoginRequest(BaseModel):
@@ -43,6 +45,25 @@ class ProfileUpdateRequest(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
     password: Optional[str] = None
+    class_level: Optional[int] = None
+    completed_lessons: Optional[list[str]] = None
+    graduated_classes: Optional[list[int]] = None
+
+
+class UpdateClassRequest(BaseModel):
+    class_level: int
+
+
+class CompleteLessonRequest(BaseModel):
+    lesson_id: str
+    class_level: Optional[int] = None
+    graduated_class: Optional[int] = None
+    promote_to_class: Optional[int] = None
+
+
+class GraduateRequest(BaseModel):
+    graduated_class: int
+    next_class_level: Optional[int] = None
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -101,14 +122,16 @@ async def register(req: RegisterRequest, response: Response):
             else:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already registered.")
 
+        initial_class = max(1, min(5, int(req.class_level if req.class_level is not None else 1)))
         conn.execute(
             """
             INSERT INTO users (
                 id, username, email, display_name, hashed_password,
                 role, is_active, is_admin, is_pro, is_paid_subscriber,
                 plan_id, plan, subscription_status, subscription_period_end,
+                class_level, completed_lessons_json, graduated_classes_json,
                 created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 user_id,
@@ -125,6 +148,9 @@ async def register(req: RegisterRequest, response: Response):
                 "pro",
                 "active",
                 "2099-12-31T23:59:59Z",
+                initial_class,
+                "[]",
+                "[]",
                 now,
                 now,
             ),
@@ -258,6 +284,21 @@ async def update_profile(req: ProfileUpdateRequest, current_user: dict[str, Any]
         updates.append("hashed_password = ?")
         params.append(hash_password(req.password))
 
+    if req.class_level is not None:
+        clamped_level = max(1, min(5, int(req.class_level)))
+        updates.append("class_level = ?")
+        params.append(clamped_level)
+
+    if req.completed_lessons is not None:
+        unique_completed = list(dict.fromkeys([str(x) for x in req.completed_lessons]))
+        updates.append("completed_lessons_json = ?")
+        params.append(json.dumps(unique_completed))
+
+    if req.graduated_classes is not None:
+        valid_graduated = sorted(list({int(x) for x in req.graduated_classes if 1 <= int(x) <= 5}))
+        updates.append("graduated_classes_json = ?")
+        params.append(json.dumps(valid_graduated))
+
     if not updates:
         return current_user
 
@@ -273,6 +314,70 @@ async def update_profile(req: ProfileUpdateRequest, current_user: dict[str, Any]
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username or email already in use.")
 
     return user_to_dict(updated_row)
+
+
+@router.post("/update-class")
+async def update_class(req: UpdateClassRequest, current_user: dict[str, Any] = Depends(require_user)):
+    user_id = current_user["id"]
+    clamped_level = max(1, min(5, int(req.class_level)))
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    with get_db() as conn:
+        conn.execute("UPDATE users SET class_level = ?, updated_at = ? WHERE id = ?", (clamped_level, now, user_id))
+        row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    return {"user": user_to_dict(row)}
+
+
+@router.post("/complete-lesson")
+async def complete_lesson(req: CompleteLessonRequest, current_user: dict[str, Any] = Depends(require_user)):
+    user_id = current_user["id"]
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        user_dict = user_to_dict(row)
+        completed = list(user_dict.get("completed_lessons") or [])
+        if req.lesson_id and req.lesson_id not in completed:
+            completed.append(req.lesson_id)
+
+        graduated = list(user_dict.get("graduated_classes") or [])
+        if req.graduated_class is not None and 1 <= int(req.graduated_class) <= 5:
+            g = int(req.graduated_class)
+            if g not in graduated:
+                graduated.append(g)
+                graduated.sort()
+
+        target_class = req.promote_to_class if req.promote_to_class is not None else req.class_level
+        if target_class is not None:
+            new_level = max(1, min(5, int(target_class)))
+        else:
+            new_level = user_dict.get("class_level", 1)
+
+        conn.execute(
+            "UPDATE users SET completed_lessons_json = ?, graduated_classes_json = ?, class_level = ?, updated_at = ? WHERE id = ?",
+            (json.dumps(completed), json.dumps(graduated), new_level, now, user_id),
+        )
+        updated_row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    return {"user": user_to_dict(updated_row)}
+
+
+@router.post("/graduate")
+async def graduate(req: GraduateRequest, current_user: dict[str, Any] = Depends(require_user)):
+    user_id = current_user["id"]
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    g = max(1, min(5, int(req.graduated_class)))
+    next_level = max(1, min(5, int(req.next_class_level if req.next_class_level is not None else min(5, g + 1))))
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        user_dict = user_to_dict(row)
+        graduated = list(user_dict.get("graduated_classes") or [])
+        if g not in graduated:
+            graduated.append(g)
+            graduated.sort()
+        conn.execute(
+            "UPDATE users SET graduated_classes_json = ?, class_level = ?, updated_at = ? WHERE id = ?",
+            (json.dumps(graduated), next_level, now, user_id),
+        )
+        updated_row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    return {"user": user_to_dict(updated_row)}
 
 
 @router.post("/forgot-password")

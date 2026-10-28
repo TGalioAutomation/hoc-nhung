@@ -20,6 +20,14 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuthStore, type User } from '../../store/useAuthStore';
+import { useGamificationStore } from '../../store/useGamificationStore';
+import {
+  CLASS_CURRICULUM,
+  ALL_CLASS_LEVELS,
+  getClassCurriculum,
+  getClassProgress,
+  type ClassLevelNumber,
+} from '../../data/classCurriculum';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSimulatorStore } from '../../store/useSimulatorStore';
 import { useProjectStore } from '../../store/useProjectStore';
@@ -39,6 +47,7 @@ export const AccountManagerModal: React.FC = () => {
     user,
     isAccountModalOpen,
     isAuthModalOpen,
+    sessionChecked,
     accountModalTab,
     closeAccountModal,
     closeAuthModal,
@@ -46,8 +55,15 @@ export const AccountManagerModal: React.FC = () => {
     register,
     logout,
     updateProfile,
+    selectClassLevel,
     loading: authLoading,
   } = useAuthStore();
+
+  const currentClassLevel = useGamificationStore((s) => s.currentClassLevel);
+  const graduatedClasses = useGamificationStore((s) => s.graduatedClasses);
+  const completedIds = useGamificationStore((s) => s.completedIds);
+  const setClassSelectorOpen = useGamificationStore((s) => s.setClassSelectorOpen);
+  const setCurrentClassLevel = useGamificationStore((s) => s.setCurrentClassLevel);
 
   const [activeTab, setActiveTab] = useState<'profile' | 'admin' | 'projects' | 'community'>('profile');
 
@@ -59,6 +75,7 @@ export const AccountManagerModal: React.FC = () => {
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regDisplayName, setRegDisplayName] = useState('');
+  const [regClassLevel, setRegClassLevel] = useState<number>(1);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Profile update state
@@ -78,6 +95,7 @@ export const AccountManagerModal: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [newDisplayName, setNewDisplayName] = useState('');
   const [newRole, setNewRole] = useState<'user' | 'admin'>('user');
+  const [newClassLevel, setNewClassLevel] = useState<number>(1);
   const [creatingUser, setCreatingUser] = useState(false);
   const [resetPwdUserId, setResetPwdUserId] = useState<string | null>(null);
   const [newResetPassword, setNewResetPassword] = useState('');
@@ -113,7 +131,8 @@ export const AccountManagerModal: React.FC = () => {
     }
   };
 
-  const isOpen = isAccountModalOpen || isAuthModalOpen;
+  const isMandatoryGate = !user;
+  const isOpen = isMandatoryGate ? sessionChecked || isAuthModalOpen : isAccountModalOpen || isAuthModalOpen;
 
   useEffect(() => {
     if (isAuthModalOpen) {
@@ -181,6 +200,7 @@ export const AccountManagerModal: React.FC = () => {
   if (!isOpen) return null;
 
   const handleClose = () => {
+    if (isMandatoryGate) return;
     closeAccountModal();
     closeAuthModal();
     setAuthError(null);
@@ -216,7 +236,7 @@ export const AccountManagerModal: React.FC = () => {
     e.preventDefault();
     setAuthError(null);
     try {
-      await register(regUsername, regEmail, regPassword, regDisplayName);
+      await register(regUsername, regEmail, regPassword, regDisplayName, regClassLevel);
       setRegUsername('');
       setRegEmail('');
       setRegPassword('');
@@ -266,6 +286,7 @@ export const AccountManagerModal: React.FC = () => {
         is_active: true,
         is_pro: true,
         plan: 'pro',
+        class_level: newClassLevel,
       });
       setNewUsername('');
       setNewEmail('');
@@ -333,6 +354,19 @@ export const AccountManagerModal: React.FC = () => {
       await loadAdminUsers();
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Không thể xóa tài khoản này.');
+    }
+  };
+
+  // Admin Change User Class Level
+  const handleAdminChangeClass = async (targetUser: User, newLevel: number) => {
+    try {
+      const api = createAdminApi();
+      await api.put(`/admin/users/${targetUser.id}`, {
+        class_level: newLevel,
+      });
+      await loadAdminUsers();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Không thể cập nhật lớp học.');
     }
   };
 
@@ -415,7 +449,7 @@ export const AccountManagerModal: React.FC = () => {
         animation: 'fadeIn 0.2s ease-out',
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) handleClose();
+        if (e.target === e.currentTarget && !isMandatoryGate) handleClose();
       }}
     >
       <div
@@ -461,7 +495,7 @@ export const AccountManagerModal: React.FC = () => {
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>Trung Tâm Tài Khoản & Quản Trị Hệ Thống</span>
+                <span>Trung Tâm Tài Khoản &amp; Quản Trị Hệ Thống</span>
                 <span
                   style={{
                     fontSize: 10,
@@ -476,27 +510,46 @@ export const AccountManagerModal: React.FC = () => {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#a1a1aa' }}>
-                Học lập trình nhúng & vi điều khiển 100% miễn phí cho cộng đồng trẻ em & học sinh Việt Nam
+                Học lập trình nhúng &amp; vi điều khiển 100% miễn phí cho cộng đồng trẻ em &amp; học sinh Việt Nam
               </div>
             </div>
           </div>
 
-          <button
-            onClick={handleClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#a1a1aa',
-              cursor: 'pointer',
-              padding: 6,
-              borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <X size={20} />
-          </button>
+          {isMandatoryGate ? (
+            <div
+              style={{
+                background: '#dc2626',
+                color: '#fff',
+                fontSize: 11,
+                fontWeight: 800,
+                padding: '4px 10px',
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                boxShadow: '0 2px 8px rgba(220, 38, 38, 0.4)',
+              }}
+            >
+              <span>🔒 Bắt Buộc Đăng Nhập</span>
+            </div>
+          ) : (
+            <button
+              onClick={handleClose}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#a1a1aa',
+                cursor: 'pointer',
+                padding: 6,
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
 
         {/* Tab Buttons */}
@@ -605,6 +658,25 @@ export const AccountManagerModal: React.FC = () => {
               {!user ? (
                 /* Unauthenticated View: Quick Login / Form */
                 <div style={{ maxWidth: 520, margin: '0 auto' }}>
+                  {/* Warm Welcoming Mandatory Login Gate Banner */}
+                  <div
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.16) 0%, rgba(30, 58, 138, 0.28) 100%)',
+                      border: '1.5px solid #3b82f6',
+                      borderRadius: 14,
+                      padding: '16px 18px',
+                      marginBottom: 16,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <div style={{ fontSize: 15, fontWeight: 900, color: '#60a5fa', marginBottom: 6 }}>
+                      🏫 Cổng Lớp Học Nhúng Cộng Đồng — Bắt Buộc Đăng Nhập Để Vào Lớp Học
+                    </div>
+                    <div style={{ fontSize: 12.5, color: '#e0e7ff', lineHeight: 1.5 }}>
+                      Vui lòng đăng nhập, đăng ký tài khoản miễn phí, hoặc chọn 1-Chạm Tài Khoản Demo bên dưới để chọn Lớp Học (Lớp 1 – Lớp 5) và lưu tiến độ chuyển cấp!
+                    </div>
+                  </div>
+
                   {/* Quick 1-Click Demo Logins */}
                   <div
                     style={{
@@ -882,6 +954,37 @@ export const AccountManagerModal: React.FC = () => {
                         />
                       </div>
 
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
+                          Chọn Lớp Học Bắt Đầu (Lớp 1 – Lớp 5)
+                        </label>
+                        <select
+                          value={regClassLevel}
+                          onChange={(e) => setRegClassLevel(Number(e.target.value))}
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            background: '#27272a',
+                            border: '1px solid #3f3f46',
+                            borderRadius: 8,
+                            color: '#38bdf8',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            boxSizing: 'border-box',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {ALL_CLASS_LEVELS.map((lvl) => {
+                            const c = CLASS_CURRICULUM[lvl];
+                            return (
+                              <option key={lvl} value={lvl}>
+                                {c.badgeIcon} {c.name} ({c.ageRange})
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+
                       <button
                         type="submit"
                         disabled={authLoading}
@@ -965,7 +1068,7 @@ export const AccountManagerModal: React.FC = () => {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: 12, color: '#e4e4e7' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> 19+ Bo mạch STM32 QEMU, Pi Linux & ESP32
+                        <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> 19+ Bo mạch STM32 QEMU, Pi Linux &amp; ESP32
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> Hàng đợi biên dịch VIP ưu tiên cao nhất
@@ -980,10 +1083,213 @@ export const AccountManagerModal: React.FC = () => {
                         <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> Không giới hạn lưu trữ dự án Đám mây
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> Không quảng cáo & Toàn quyền IoT Gateway
+                        <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span> Không quảng cáo &amp; Toàn quyền IoT Gateway
                       </div>
                     </div>
                   </div>
+
+                  {/* 🎓 Lớp Học Hiện Tại & Tiến Độ Chuyển Cấp */}
+                  {(() => {
+                    const activeLvl = (user.class_level || currentClassLevel || 1) as ClassLevelNumber;
+                    const curClass = CLASS_CURRICULUM[activeLvl] || CLASS_CURRICULUM[1];
+                    const prog = getClassProgress(activeLvl, completedIds);
+                    const userGraduated =
+                      user.graduated_classes && user.graduated_classes.length > 0
+                        ? user.graduated_classes
+                        : graduatedClasses;
+
+                    return (
+                      <div
+                        style={{
+                          background: '#1f1f23',
+                          border: `1.5px solid ${curClass.color}`,
+                          borderRadius: 14,
+                          padding: '16px 20px',
+                          marginBottom: 20,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 12,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: 10,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontSize: 32 }}>{curClass.badgeIcon}</span>
+                            <div>
+                              <div
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 800,
+                                  color: curClass.color,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.05em',
+                                }}
+                              >
+                                LỚP HỌC HIỆN TẠI CỦA BẠN
+                              </div>
+                              <div style={{ fontSize: 16, fontWeight: 900, color: '#fff' }}>
+                                {curClass.name}
+                              </div>
+                              <div style={{ fontSize: 12, color: '#a1a1aa' }}>
+                                Độ tuổi phù hợp: {curClass.ageRange} · {curClass.description}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleClose();
+                              setClassSelectorOpen(true);
+                            }}
+                            style={{
+                              background: curClass.color,
+                              border: 'none',
+                              color: '#fff',
+                              padding: '8px 14px',
+                              borderRadius: 8,
+                              fontWeight: 700,
+                              fontSize: 12,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                            }}
+                          >
+                            <span>📚 Mở Bảng Chọn Lớp &amp; Bài Học</span>
+                          </button>
+                        </div>
+
+                        {/* Progress Bar & Class Switcher */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                          <div style={{ flex: 1, minWidth: 200 }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                fontSize: 12,
+                                marginBottom: 4,
+                              }}
+                            >
+                              <span style={{ color: '#d4d4d8' }}>Tiến độ bài cốt lõi:</span>
+                              <strong style={{ color: curClass.color }}>
+                                {prog.completedCount}/{prog.totalCount} bài ({prog.percent}%)
+                              </strong>
+                            </div>
+                            <div
+                              style={{
+                                height: 8,
+                                background: '#121214',
+                                borderRadius: 999,
+                                overflow: 'hidden',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: `${prog.percent}%`,
+                                  height: '100%',
+                                  background: curClass.color,
+                                  borderRadius: 999,
+                                  transition: 'width 0.3s ease',
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Switch Classroom Dropdown */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <label style={{ fontSize: 12, color: '#a1a1aa', fontWeight: 600 }}>
+                              Chuyển lớp:
+                            </label>
+                            <select
+                              value={activeLvl}
+                              onChange={async (e) => {
+                                const newLvl = Number(e.target.value) as ClassLevelNumber;
+                                setCurrentClassLevel(newLvl);
+                                try {
+                                  await selectClassLevel(newLvl);
+                                } catch {
+                                  /* ignore */
+                                }
+                              }}
+                              style={{
+                                background: '#27272a',
+                                border: '1px solid #3f3f46',
+                                color: '#fff',
+                                padding: '6px 10px',
+                                borderRadius: 6,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {ALL_CLASS_LEVELS.map((lvl) => {
+                                const cl = CLASS_CURRICULUM[lvl];
+                                return (
+                                  <option key={lvl} value={lvl}>
+                                    {cl.shortName} · {cl.name.split(':')[1]?.trim() || ''}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Graduated Certificates Strip */}
+                        <div
+                          style={{
+                            borderTop: '1px solid #27272a',
+                            paddingTop: 10,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#fbbf24' }}>
+                            🏆 Bằng tốt nghiệp đã đạt:
+                          </span>
+                          {userGraduated.length === 0 ? (
+                            <span style={{ fontSize: 12, color: '#71717a' }}>
+                              Chưa có bằng (Hãy hoàn thành 5 bài cốt lõi của lớp để tốt nghiệp!)
+                            </span>
+                          ) : (
+                            userGraduated.map((glvl) => {
+                              const gConfig =
+                                CLASS_CURRICULUM[glvl as ClassLevelNumber] || CLASS_CURRICULUM[1];
+                              return (
+                                <span
+                                  key={glvl}
+                                  style={{
+                                    background: '#78350f44',
+                                    border: '1px solid #f59e0b',
+                                    color: '#fef08a',
+                                    padding: '2px 8px',
+                                    borderRadius: 6,
+                                    fontSize: 11,
+                                    fontWeight: 800,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                  }}
+                                >
+                                  <span>{gConfig.badgeIcon}</span>
+                                  <span>Bằng {gConfig.shortName}</span>
+                                </span>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Profile Edit Form */}
                   <div
@@ -1351,6 +1657,35 @@ export const AccountManagerModal: React.FC = () => {
                       </select>
                     </div>
 
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#a1a1aa', marginBottom: 4 }}>
+                        Lớp học khởi đầu
+                      </label>
+                      <select
+                        value={newClassLevel}
+                        onChange={(e) => setNewClassLevel(Number(e.target.value))}
+                        style={{
+                          width: '100%',
+                          padding: '8px 10px',
+                          background: '#27272a',
+                          border: '1px solid #3f3f46',
+                          borderRadius: 6,
+                          color: '#fff',
+                          fontSize: 13,
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                        {ALL_CLASS_LEVELS.map((lvl) => {
+                          const curr = getClassCurriculum(lvl);
+                          return (
+                            <option key={lvl} value={lvl}>
+                              Lớp {lvl}: {curr.title}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
                     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
                       <button
                         type="submit"
@@ -1464,6 +1799,7 @@ export const AccountManagerModal: React.FC = () => {
                       <th style={{ padding: '8px 10px' }}>Vai Trò</th>
                       <th style={{ padding: '8px 10px' }}>Gói Cước</th>
                       <th style={{ padding: '8px 10px' }}>Trạng Thái</th>
+                      <th style={{ padding: '8px 10px' }}>Lớp Học &amp; Tiến Độ</th>
                       <th style={{ padding: '8px 10px', textAlign: 'right' }}>Thao Tác</th>
                     </tr>
                   </thead>
@@ -1518,6 +1854,54 @@ export const AccountManagerModal: React.FC = () => {
                           >
                             {u.is_active ? '● Hoạt động' : '○ Bị khóa'}
                           </button>
+                        </td>
+                        <td style={{ padding: '10px 10px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <select
+                              value={u.class_level || 1}
+                              onChange={(e) => handleAdminChangeClass(u, Number(e.target.value))}
+                              style={{
+                                background: '#18181b',
+                                border: '1px solid #3b82f6',
+                                borderRadius: 6,
+                                color: '#93c5fd',
+                                fontSize: 11,
+                                fontWeight: 700,
+                                padding: '3px 6px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {ALL_CLASS_LEVELS.map((lvl) => (
+                                <option key={lvl} value={lvl}>
+                                  Lớp {lvl}
+                                </option>
+                              ))}
+                            </select>
+                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  background: 'rgba(59, 130, 246, 0.15)',
+                                  color: '#60a5fa',
+                                  padding: '1px 5px',
+                                  borderRadius: 4,
+                                }}
+                              >
+                                📚 {u.completed_lessons?.length || 0} bài
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  background: (u.graduated_classes?.length || 0) > 0 ? 'rgba(234, 179, 8, 0.2)' : 'rgba(113, 113, 122, 0.2)',
+                                  color: (u.graduated_classes?.length || 0) > 0 ? '#facc15' : '#71717a',
+                                  padding: '1px 5px',
+                                  borderRadius: 4,
+                                }}
+                              >
+                                🎓 {u.graduated_classes?.length || 0} bằng
+                              </span>
+                            </div>
+                          </div>
                         </td>
                         <td style={{ padding: '10px 10px', textAlign: 'right' }}>
                           <div style={{ display: 'inline-flex', gap: 6 }}>

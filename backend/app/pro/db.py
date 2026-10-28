@@ -78,6 +78,9 @@ def init_db() -> None:
                 plan TEXT DEFAULT 'pro',
                 subscription_status TEXT DEFAULT 'active',
                 subscription_period_end TEXT DEFAULT '2099-12-31T23:59:59Z',
+                class_level INTEGER NOT NULL DEFAULT 1,
+                completed_lessons_json TEXT NOT NULL DEFAULT '[]',
+                graduated_classes_json TEXT NOT NULL DEFAULT '[]',
                 created_at TEXT,
                 updated_at TEXT
             )
@@ -115,6 +118,21 @@ def init_db() -> None:
         )
 
         # Safe migration for existing databases: add missing columns if they do not exist
+        user_cursor = conn.execute("PRAGMA table_info(users)")
+        existing_user_cols = {row["name"] for row in user_cursor.fetchall()}
+        user_migrations = [
+            ("class_level", "ALTER TABLE users ADD COLUMN class_level INTEGER NOT NULL DEFAULT 1"),
+            ("completed_lessons_json", "ALTER TABLE users ADD COLUMN completed_lessons_json TEXT NOT NULL DEFAULT '[]'"),
+            ("graduated_classes_json", "ALTER TABLE users ADD COLUMN graduated_classes_json TEXT NOT NULL DEFAULT '[]'"),
+        ]
+        for col_name, alter_stmt in user_migrations:
+            if col_name not in existing_user_cols:
+                try:
+                    conn.execute(alter_stmt)
+                    logger.info("Migrated users table: added column %s", col_name)
+                except Exception as exc:
+                    logger.warning("Could not add column %s: %r", col_name, exc)
+
         cursor = conn.execute("PRAGMA table_info(projects)")
         existing_cols = {row["name"] for row in cursor.fetchall()}
 
@@ -164,8 +182,9 @@ def init_db() -> None:
                     id, username, email, display_name, hashed_password,
                     role, is_active, is_admin, is_pro, is_paid_subscriber,
                     plan_id, plan, subscription_status, subscription_period_end,
+                    class_level, completed_lessons_json, graduated_classes_json,
                     created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     admin_id,
@@ -182,6 +201,9 @@ def init_db() -> None:
                     "pro",
                     "active",
                     "2099-12-31T23:59:59Z",
+                    1,
+                    "[]",
+                    "[]",
                     now,
                     now,
                 ),
@@ -199,8 +221,9 @@ def init_db() -> None:
                     id, username, email, display_name, hashed_password,
                     role, is_active, is_admin, is_pro, is_paid_subscriber,
                     plan_id, plan, subscription_status, subscription_period_end,
+                    class_level, completed_lessons_json, graduated_classes_json,
                     created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     student_id,
@@ -217,6 +240,9 @@ def init_db() -> None:
                     "pro",
                     "active",
                     "2099-12-31T23:59:59Z",
+                    1,
+                    "[]",
+                    "[]",
                     now,
                     now,
                 ),

@@ -8,6 +8,7 @@ import {
 } from '../../store/useGamificationStore';
 import { useSimulatorStore } from '../../store/useSimulatorStore';
 import { loadExample } from '../../utils/loadExample';
+import { CLASS_CURRICULUM, type ClassLevelNumber } from '../../data/classCurriculum';
 
 export const QuestDrawer: React.FC = () => {
   const questDrawerOpen = useGamificationStore((s) => s.questDrawerOpen);
@@ -19,10 +20,14 @@ export const QuestDrawer: React.FC = () => {
   const rewardToast = useGamificationStore((s) => s.rewardToast);
   const dismissToast = useGamificationStore((s) => s.dismissToast);
   const recordSimulationSuccess = useGamificationStore((s) => s.recordSimulationSuccess);
+  const currentClassLevel = useGamificationStore((s) => s.currentClassLevel);
+  const setClassSelectorOpen = useGamificationStore((s) => s.setClassSelectorOpen);
+  const completeLessonAndCheckGraduation = useGamificationStore((s) => s.completeLessonAndCheckGraduation);
 
   const isRunning = useSimulatorStore((s) => s.running);
   const activeBoardId = useSimulatorStore((s) => s.activeBoardId);
 
+  const [classFilter, setClassFilter] = useState<number | 'all'>('all');
   const [ageFilter, setAgeFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
   const [boardFilter, setBoardFilter] = useState<string>('all');
   const [search, setSearch] = useState<string>('');
@@ -56,6 +61,10 @@ export const QuestDrawer: React.FC = () => {
   const filteredQuests = useMemo(() => {
     const q = search.trim().toLowerCase();
     return exampleProjects.filter((ex) => {
+      if (classFilter !== 'all') {
+        const targetClass = CLASS_CURRICULUM[classFilter as ClassLevelNumber];
+        if (!targetClass?.lessonIds.includes(ex.id)) return false;
+      }
       if (ageFilter !== 'all' && ex.difficulty !== ageFilter) return false;
       if (boardFilter !== 'all') {
         const b = ex.boardFilter ?? ex.boardType ?? 'arduino-uno';
@@ -75,7 +84,7 @@ export const QuestDrawer: React.FC = () => {
       }
       return true;
     });
-  }, [ageFilter, boardFilter, search]);
+  }, [classFilter, ageFilter, boardFilter, search]);
 
   const handleSelectQuest = async (ex: ExampleProject) => {
     setActiveQuestId(ex.id);
@@ -320,7 +329,7 @@ export const QuestDrawer: React.FC = () => {
             </div>
           )}
 
-          {/* Bộ lọc độ tuổi 5–20 & Tìm kiếm */}
+          {/* Bộ lọc Lớp Học & Độ tuổi 5–20 & Tìm kiếm */}
           <div
             style={{
               padding: '0 10px 8px',
@@ -331,11 +340,68 @@ export const QuestDrawer: React.FC = () => {
               flexShrink: 0,
             }}
           >
+            {/* Lọc Theo Lớp Học (Lớp 1 – Lớp 5) & Nút Chọn Lớp */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--wb-11)' }}>
+                  Lọc Theo Cấp Lớp:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setClassSelectorOpen(true)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#38bdf8',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 3,
+                  }}
+                >
+                  <span>🏫 Chọn Lớp &amp; Chuyển Cấp ➔</span>
+                </button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 3 }}>
+                {[
+                  { id: 'all', label: 'Tất cả' },
+                  { id: 1, label: '🌱 L1' },
+                  { id: 2, label: '⚡ L2' },
+                  { id: 3, label: '🔧 L3' },
+                  { id: 4, label: '📡 L4' },
+                  { id: 5, label: '🚀 L5' },
+                ].map((item) => (
+                  <button
+                    key={String(item.id)}
+                    type="button"
+                    onClick={() => setClassFilter(item.id as number | 'all')}
+                    style={{
+                      padding: '4px 2px',
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      borderRadius: 5,
+                      border: classFilter === item.id ? '1px solid #16a34a' : '1px solid var(--wb-6)',
+                      background: classFilter === item.id ? '#16a34a' : 'var(--wb-3)',
+                      color: classFilter === item.id ? '#fff' : 'var(--wb-12)',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Dải nút chọn độ tuổi */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
               {(
                 [
-                  { id: 'all', label: 'Tất cả' },
+                  { id: 'all', label: 'Tất cả tuổi' },
                   { id: 'beginner', label: '🌱 5–8t' },
                   { id: 'intermediate', label: '🧩 9–13t' },
                   { id: 'advanced', label: '🚀 14–20t' },
@@ -424,6 +490,8 @@ export const QuestDrawer: React.FC = () => {
               const isDone = completedIds.includes(ex.id);
               const diffMeta = DIFFICULTY_META_VI[ex.difficulty] ?? DIFFICULTY_META_VI.beginner;
               const catLabel = CATEGORY_LABELS_VI[ex.category] ?? ex.category;
+              const isCoreLesson = CLASS_CURRICULUM[currentClassLevel as ClassLevelNumber]?.lessonIds.includes(ex.id);
+
               return (
                 <button
                   key={ex.id}
@@ -435,6 +503,8 @@ export const QuestDrawer: React.FC = () => {
                     borderRadius: 8,
                     border: isSelected
                       ? '1.5px solid var(--color-action-primary)'
+                      : isCoreLesson
+                      ? '1.5px solid #16a34a'
                       : '1px solid var(--wb-6)',
                     background: isSelected ? 'var(--color-accent-soft)' : 'var(--wb-1)',
                     color: 'var(--wb-13)',
@@ -476,9 +546,63 @@ export const QuestDrawer: React.FC = () => {
                           : `+${diffMeta.xp} XP`}
                     </span>
                   </div>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--wb-13)' }}>
-                    {ex.title}
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      color: 'var(--wb-13)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 6,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <span>{ex.title}</span>
+                    {isCoreLesson && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 800,
+                          background: '#16a34a22',
+                          color: '#22c55e',
+                          border: '1px solid #16a34a',
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        🎓 Bài cốt lõi Lớp {currentClassLevel}
+                      </span>
+                    )}
                   </div>
+
+                  {!isDone && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        completeLessonAndCheckGraduation(ex.id);
+                      }}
+                      title="Đánh dấu đã thực hành xong để cộng XP & tích lũy chuyển cấp"
+                      style={{
+                        marginTop: 4,
+                        alignSelf: 'flex-start',
+                        padding: '2px 8px',
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        borderRadius: 4,
+                        background: '#22c55e18',
+                        color: '#22c55e',
+                        border: '1px solid #22c55e44',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      <span>✅ Đánh dấu hoàn thành bài</span>
+                    </div>
+                  )}
                 </button>
               );
             })}
