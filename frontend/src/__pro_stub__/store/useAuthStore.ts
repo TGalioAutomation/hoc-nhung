@@ -43,7 +43,7 @@ export interface AuthState {
 
   // Actions
   login: (ident: string, password: string) => Promise<User>;
-  register: (username: string, email: string, password: string, displayName?: string, classLevel?: number) => Promise<User>;
+  register: (username: string, email?: string, password?: string, displayName?: string, classLevel?: number) => Promise<User>;
   logout: () => Promise<void>;
   checkSession: () => Promise<User | null>;
   updateProfile: (data: { displayName?: string; display_name?: string; username?: string; email?: string; password?: string; class_level?: number; completed_lessons?: string[]; graduated_classes?: number[] }) => Promise<User>;
@@ -200,9 +200,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   register: async (username, email, password, displayName, classLevel) => {
     set({ loading: true });
     try {
+      const sanitizedUsername = username.trim().toLowerCase();
+      const sanitizedEmail = email && email.trim() ? email.trim() : `${sanitizedUsername}@hocnhung.local`;
       const { data } = await authApi.post('/auth/register', {
-        username,
-        email,
+        username: sanitizedUsername,
+        email: sanitizedEmail,
         password,
         display_name: displayName,
         class_level: classLevel,

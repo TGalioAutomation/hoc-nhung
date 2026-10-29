@@ -4,6 +4,7 @@ import datetime
 import json
 import re
 import sqlite3
+import time
 import uuid
 from typing import Any, Optional
 
@@ -20,7 +21,7 @@ USERNAME_REGEX = re.compile(r"^[a-z0-9_-]{3,30}$")
 
 class AdminCreateUserRequest(BaseModel):
     username: str
-    email: str
+    email: Optional[str] = None
     password: str
     display_name: Optional[str] = None
     role: Optional[str] = "user"
@@ -74,10 +75,10 @@ async def create_user(req: AdminCreateUserRequest, admin: dict[str, Any] = Depen
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username must be 3-30 lowercase characters with only letters, numbers, hyphens, and underscores.",
         )
-    if len(req.password) < 6:
+    if len(req.password) < 4:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 6 characters.",
+            detail="Password must be at least 4 characters.",
         )
 
     user_id = str(uuid.uuid4())
@@ -87,15 +88,27 @@ async def create_user(req: AdminCreateUserRequest, admin: dict[str, Any] = Depen
     role = req.role if req.role else ("admin" if req.is_admin else "user")
 
     with get_db() as conn:
-        existing = conn.execute(
-            "SELECT username, email FROM users WHERE username = ? OR email = ?",
-            (username, req.email.lower()),
+        existing_user = conn.execute(
+            "SELECT id FROM users WHERE username = ?",
+            (username,),
         ).fetchone()
-        if existing:
-            if existing["username"].lower() == username:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username is already taken.")
+        if existing_user:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username is already taken.")
+
+        # Determine email: if empty or missing, fallback to {username}@hocnhung.local
+        raw_email = req.email.strip().lower() if req.email and req.email.strip() else None
+        if not raw_email:
+            candidate_email = f"{username}@hocnhung.local"
+            conflict = conn.execute("SELECT id FROM users WHERE email = ?", (candidate_email,)).fetchone()
+            if conflict:
+                email = f"{username}_{int(time.time())}@hocnhung.local"
             else:
+                email = candidate_email
+        else:
+            conflict = conn.execute("SELECT id FROM users WHERE email = ?", (raw_email,)).fetchone()
+            if conflict:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already registered.")
+            email = raw_email
 
         clamped_class = max(1, min(5, int(req.class_level if req.class_level is not None else 1)))
         conn.execute(
@@ -111,7 +124,7 @@ async def create_user(req: AdminCreateUserRequest, admin: dict[str, Any] = Depen
             (
                 user_id,
                 username,
-                req.email.lower(),
+                email,
                 display_name,
                 hashed_pwd,
                 role,

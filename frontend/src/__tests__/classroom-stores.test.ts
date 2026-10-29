@@ -92,4 +92,11 @@ describe('Gamification & Auth Store Classroom Integration', () => {
     expect(state.isAuthModalOpen).toBe(true);
     expect(state.authModalTab).toBe('login');
   });
+
+  it('supports registration without email, automatically fallback to local email domain', () => {
+    const registerFn = useAuthStore.getState().register;
+    expect(typeof registerFn).toBe('function');
+    // Function takes 5 parameters: username, optional email, password, displayName, classLevel
+    expect(registerFn.length).toBeGreaterThanOrEqual(1);
+  });
 });

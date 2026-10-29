@@ -236,7 +236,7 @@ export const AccountManagerModal: React.FC = () => {
     e.preventDefault();
     setAuthError(null);
     try {
-      await register(regUsername, regEmail, regPassword, regDisplayName, regClassLevel);
+      await register(regUsername, undefined, regPassword, regDisplayName, regClassLevel);
       setRegUsername('');
       setRegEmail('');
       setRegPassword('');
@@ -276,9 +276,10 @@ export const AccountManagerModal: React.FC = () => {
     setAdminError(null);
     try {
       const api = createAdminApi();
+      const sanitizedUsername = newUsername.trim().toLowerCase();
       await api.post('/admin/users', {
-        username: newUsername,
-        email: newEmail,
+        username: sanitizedUsername,
+        email: newEmail.trim() ? newEmail.trim() : `${sanitizedUsername}@hocnhung.local`,
         password: newPassword,
         display_name: newDisplayName || undefined,
         role: newRole,
@@ -792,13 +793,13 @@ export const AccountManagerModal: React.FC = () => {
                     <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       <div>
                         <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
-                          Email hoặc Tên đăng nhập
+                          Tên đăng nhập (Không cần Gmail)
                         </label>
                         <input
                           type="text"
                           value={ident}
                           onChange={(e) => setIdent(e.target.value)}
-                          placeholder="admin / hocsinh / email..."
+                          placeholder="Nhập tên đăng nhập (ví dụ: hocsinh, admin, be_minh)..."
                           required
                           style={{
                             width: '100%',
@@ -812,6 +813,9 @@ export const AccountManagerModal: React.FC = () => {
                             boxSizing: 'border-box',
                           }}
                         />
+                        <div style={{ fontSize: 11, color: '#10b981', marginTop: 4 }}>
+                          💡 Học sinh đăng nhập trực tiếp bằng Tên đăng nhập, không cần Gmail.
+                        </div>
                       </div>
 
                       <div>
@@ -865,35 +869,13 @@ export const AccountManagerModal: React.FC = () => {
                     <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       <div>
                         <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
-                          Tên hiển thị (Họ và tên)
-                        </label>
-                        <input
-                          type="text"
-                          value={regDisplayName}
-                          onChange={(e) => setRegDisplayName(e.target.value)}
-                          placeholder="Nguyễn Văn A"
-                          style={{
-                            width: '100%',
-                            padding: '10px 12px',
-                            background: '#27272a',
-                            border: '1px solid #3f3f46',
-                            borderRadius: 8,
-                            color: '#fff',
-                            fontSize: 14,
-                            boxSizing: 'border-box',
-                          }}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
-                          Username (viết liền không dấu)
+                          Tên đăng nhập *
                         </label>
                         <input
                           type="text"
                           value={regUsername}
                           onChange={(e) => setRegUsername(e.target.value)}
-                          placeholder="nguyenvana"
+                          placeholder="Ví dụ: be_minh, ky_su_nhi..."
                           required
                           style={{
                             width: '100%',
@@ -910,37 +892,13 @@ export const AccountManagerModal: React.FC = () => {
 
                       <div>
                         <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
-                          Email
+                          Họ và tên / Biệt danh của bé
                         </label>
                         <input
-                          type="email"
-                          value={regEmail}
-                          onChange={(e) => setRegEmail(e.target.value)}
-                          placeholder="vana@example.com"
-                          required
-                          style={{
-                            width: '100%',
-                            padding: '10px 12px',
-                            background: '#27272a',
-                            border: '1px solid #3f3f46',
-                            borderRadius: 8,
-                            color: '#fff',
-                            fontSize: 14,
-                            boxSizing: 'border-box',
-                          }}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
-                          Mật khẩu (tối thiểu 8 ký tự)
-                        </label>
-                        <input
-                          type="password"
-                          value={regPassword}
-                          onChange={(e) => setRegPassword(e.target.value)}
-                          placeholder="••••••••"
-                          required
+                          type="text"
+                          value={regDisplayName}
+                          onChange={(e) => setRegDisplayName(e.target.value)}
+                          placeholder="Ví dụ: Bé Minh"
                           style={{
                             width: '100%',
                             padding: '10px 12px',
@@ -983,6 +941,29 @@ export const AccountManagerModal: React.FC = () => {
                             );
                           })}
                         </select>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#d4d4d8', marginBottom: 6 }}>
+                          Mật khẩu *
+                        </label>
+                        <input
+                          type="password"
+                          value={regPassword}
+                          onChange={(e) => setRegPassword(e.target.value)}
+                          placeholder="Tối thiểu 4 ký tự..."
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            background: '#27272a',
+                            border: '1px solid #3f3f46',
+                            borderRadius: 8,
+                            color: '#fff',
+                            fontSize: 14,
+                            boxSizing: 'border-box',
+                          }}
+                        />
                       </div>
 
                       <button
@@ -1590,36 +1571,13 @@ export const AccountManagerModal: React.FC = () => {
 
                     <div>
                       <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#a1a1aa', marginBottom: 4 }}>
-                        Email *
-                      </label>
-                      <input
-                        type="email"
-                        value={newEmail}
-                        onChange={(e) => setNewEmail(e.target.value)}
-                        placeholder="vanb@example.com"
-                        required
-                        style={{
-                          width: '100%',
-                          padding: '8px 10px',
-                          background: '#27272a',
-                          border: '1px solid #3f3f46',
-                          borderRadius: 6,
-                          color: '#fff',
-                          fontSize: 13,
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#a1a1aa', marginBottom: 4 }}>
                         Mật khẩu *
                       </label>
                       <input
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Tối thiểu 6 ký tự"
+                        placeholder="Tối thiểu 4 ký tự"
                         required
                         style={{
                           width: '100%',
@@ -1679,7 +1637,7 @@ export const AccountManagerModal: React.FC = () => {
                           const curr = getClassCurriculum(lvl);
                           return (
                             <option key={lvl} value={lvl}>
-                              Lớp {lvl}: {curr.title}
+                              Lớp {lvl}: {curr.name}
                             </option>
                           );
                         })}
@@ -1807,10 +1765,16 @@ export const AccountManagerModal: React.FC = () => {
                     {adminUsers.map((u) => (
                       <tr key={u.id} style={{ borderBottom: '1px solid #27272a' }}>
                         <td style={{ padding: '10px 10px' }}>
-                          <div style={{ fontWeight: 600, color: '#fff' }}>{u.display_name || u.username}</div>
-                          <div style={{ fontSize: 11, color: '#71717a' }}>@{u.username}</div>
+                          <div style={{ fontWeight: 700, color: '#fff' }}>{u.display_name || u.username}</div>
+                          <div style={{ fontSize: 12, color: '#60a5fa', fontWeight: 700, fontFamily: 'monospace' }}>@{u.username}</div>
                         </td>
-                        <td style={{ padding: '10px 10px', color: '#d4d4d8' }}>{u.email}</td>
+                        <td style={{ padding: '10px 10px', color: '#a1a1aa', fontSize: 11 }}>
+                          {u.email.endsWith('@hocnhung.local') ? (
+                            <span style={{ color: '#34d399', fontStyle: 'italic' }}>Không dùng Gmail</span>
+                          ) : (
+                            u.email
+                          )}
+                        </td>
                         <td style={{ padding: '10px 10px' }}>
                           <span
                             style={{
